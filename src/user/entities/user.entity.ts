@@ -4,41 +4,40 @@ import { Rol } from 'src/rol/entities/rol.entity';
 import { UsuarioTurno } from 'src/usuario-turno/entities/usuario-turno.entity';
 import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, OneToMany, ManyToOne } from 'typeorm';
 
-
 @Entity()
 export class User {
 
     @PrimaryGeneratedColumn()
-    id:number;
+    id: number;
 
     @Column()
-    fullname:string;
+    fullname: string;
 
     @Column()
-    cedula:number;
+    cedula: number;
 
     @Column()
-    respuestaSeguridad:string;
+    respuestaSeguridad: string;
 
     @Column()
-    password:string;
+    password: string;
+
+    @Column({ type: 'boolean', default: true })
+    estado: boolean;
 
     @DeleteDateColumn()
-    deleteAt:Date;
+    deleteAt: Date;
 
-    @OneToMany(() =>UsuarioTurno, UsuarioTurno =>UsuarioTurno.userTurno)
+    @OneToMany(() => UsuarioTurno, UsuarioTurno => UsuarioTurno.userTurno)
     usuarioTurno: UsuarioTurno;
 
     @ManyToOne(() => Rol, (rol) => rol.rolUser, { onDelete: 'CASCADE' })
     rol: Rol;//corregir
 
     @OneToMany(() => HorasExtra, HorasExtra => HorasExtra.usuario)
-    userHoraExtra:HorasExtra;
+    userHoraExtra: HorasExtra;
 
     @ManyToOne(() => Pregunta, (preguntas) => preguntas.usuarioPreguntas, { onDelete: 'CASCADE' })
     preguntas: Pregunta;
-
-    
-
 
 }
