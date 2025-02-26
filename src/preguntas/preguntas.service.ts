@@ -47,7 +47,7 @@ export class PreguntasService {
   async remove(id: number): Promise<void> {
     const pregunta = await this.preguntaRepository.findOne({ where: { id } });
     if (!pregunta) {
-      throw new Error(Pregunta con ID ${id} no encontrada);
+      throw new Error('Pregunta con ID ${id} no encontrada');
     }
     await this.preguntaRepository.remove(pregunta);
   }
