@@ -2,9 +2,10 @@ import { HorasExtra } from 'src/horasExtras/entities/horas-extra.entity';
 import { Pregunta } from 'src/preguntas/entities/pregunta.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { UsuarioTurno } from 'src/usuario-turno/entities/usuario-turno.entity';
-import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, OneToMany, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, OneToMany, ManyToOne, Unique } from 'typeorm';
 
 @Entity()
+@Unique(['cedula'])
 export class User {
 
     @PrimaryGeneratedColumn()
@@ -13,7 +14,7 @@ export class User {
     @Column()
     fullname: string;
 
-    @Column()
+    @Column({unique:true})
     cedula: number;
 
     @Column()

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,11 +18,21 @@ export class UserService {
   ) { }
 
   async create(createUserDto: CreateUserDto) {
+    // Verificar si la cédula ya existe en la base de datos
+    const existingUser = await this.userRepository.findOne({ where: { cedula: createUserDto.cedula } });
+  
+    if (existingUser) {
+       console.error('El usuario ya existe');
+      throw new ConflictException('Comunicate con el administrador');
+    }
+  
+    // Crear el usuario solo si la cédula no existe
     const user = this.userRepository.create({
-      ...createUserDto, // Copiar los datos del DTO
-      preguntas:{id:createUserDto.preguntas} as Pregunta,
+      ...createUserDto,
+      preguntas: { id: createUserDto.preguntas } as Pregunta,
       rol: { idRol: 1 } as Rol,
     });
+  
     return await this.userRepository.save(user);
   }
 
