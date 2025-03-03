@@ -35,10 +35,9 @@ export class LoginService {
     }
 
     // Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log('password'+password);
-    console.log('password'+user.password);
-    console.log('Resultado de bcrypt.compare:', isPasswordValid);
+   // const isPasswordValid = await bcrypt.compare(password, user.password);
+   const isPasswordValid = password===user.password;//almacenado en texto plano
+   
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas2daFFFF');
