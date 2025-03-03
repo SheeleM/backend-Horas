@@ -6,6 +6,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class LoginService {
@@ -21,19 +22,26 @@ export class LoginService {
     const cedulaNum = Number(cedula);
 
     const user = await this.userRepository.findOne({
-      where: { cedula: cedulaNum, estado: true }, // Añadido estado: true para verificar usuarios activos
+      where: { cedula: cedulaNum ,estado: true },// estado: true }, // Añadido estado: true para verificar usuarios activos
       relations: ['rol']
     });
 
+    console.log('¿Usuario existe?', user ? 'Sí' : 'No');
+    console.log('¿activo?', user?.estado ? 'activo' : 'inactivo');
+
     if (!user) {
+      console.log('Usuario no encontrado o inactivo');
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 
     // Verificar contraseña
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('password'+password);
+    console.log('password'+user.password);
+    console.log('Resultado de bcrypt.compare:', isPasswordValid);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales inválidas2daFFFF');
     }
     
     // Generar token JWT
