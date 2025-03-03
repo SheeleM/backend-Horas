@@ -61,6 +61,5 @@ export class LoginService {
     };
   }
 
-  // Eliminar métodos CRUD que no son necesarios para el login o moverlos a otro servicio si se necesitan
-
+  
 }

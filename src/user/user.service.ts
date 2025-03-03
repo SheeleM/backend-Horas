@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { Pregunta } from 'src/preguntas/entities/pregunta.entity';
+import { GetUserDto } from './dto/get-user.dto';
 
 
 @Injectable()
@@ -37,22 +38,41 @@ export class UserService {
   }
 
 
-  async findAll() {
-    return await this.userRepository.find();
-  }
-
+  async findAll(): Promise<GetUserDto[]> {
+    const users = await this.userRepository.find({ 
+      relations: ['rol'] 
+    });
+    return users.map(user => new GetUserDto(user));
+  
   async findOne(id: number) {
     return await this.userRepository.findOneBy({ id })
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    return await this.userRepository.update(id, {
-      ...updateUserDto, 
-      preguntas:{id:updateUserDto.preguntas} as Pregunta,
-      rol: { idRol: 1 } as Rol,
-    });
+  async update(updateUserDto: UpdateUserDto) {
+    try {
+      const { id, estado, rol } = updateUserDto;
+  
+      const user = await this.userRepository.findOne({ where: { id } });
+  
+      if (!user) {
+        return { affected: 0, message: 'User not found' };
+      }
+  
+      if (estado !== undefined) {
+        user.estado = estado;
+      }
+  
+      if (rol !== undefined) {
+        user.rol = { idRol: rol } as Rol;
+      }
+      await this.userRepository.save(user);
+  
+      
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
   }
-
   async remove(id: number) {
     return await this.userRepository.softDelete({ id });
   }

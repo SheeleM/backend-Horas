@@ -29,7 +29,7 @@ export class PreguntasService {
   async findOne(id: number): Promise<GetPreguntaDto> {
     const pregunta = await this.preguntaRepository.findOne({ where: { id } });
     if (!pregunta) {
-      throw new NotFoundException('No se encontró la pregunta con ID ${id}');
+      throw new NotFoundException(`No se encontró la pregunta con ID ${id}`);
     }
     return { id: pregunta.id, pregunta: pregunta.pregunta };
   }
@@ -47,7 +47,7 @@ export class PreguntasService {
   async remove(id: number): Promise<void> {
     const pregunta = await this.preguntaRepository.findOne({ where: { id } });
     if (!pregunta) {
-      throw new Error('Pregunta con ID ${id} no encontrada');
+      throw new Error(`Pregunta con ID ${id} no encontrada`);
     }
     await this.preguntaRepository.remove(pregunta);
   }
