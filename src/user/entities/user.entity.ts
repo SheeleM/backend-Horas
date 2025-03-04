@@ -2,43 +2,51 @@ import { HorasExtra } from 'src/horasExtras/entities/horas-extra.entity';
 import { Pregunta } from 'src/preguntas/entities/pregunta.entity';
 import { Rol } from 'src/rol/entities/rol.entity';
 import { UsuarioTurno } from 'src/usuario-turno/entities/usuario-turno.entity';
-import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, OneToMany, ManyToOne, Unique } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  DeleteDateColumn,
+  OneToMany,
+  ManyToOne,
+  Unique,
+} from 'typeorm';
 
 @Entity()
 @Unique(['cedula'])
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @Column()
+  fullname: string;
 
-    @Column()
-    fullname: string;
+  @Column({ unique: true })
+  cedula: number;
 
-    @Column({unique:true})
-    cedula: number;
+  @Column()
+  respuestaSeguridad: string;
 
-    @Column()
-    respuestaSeguridad: string;
+  @Column()
+  password: string;
 
-    @Column()
-    password: string;
+  @Column({ type: 'boolean', default: true })
+  estado: boolean;
 
-    @Column({ type: 'boolean', default: true })
-    estado: boolean;
+  @DeleteDateColumn()
+  deleteAt: Date;
 
-    @DeleteDateColumn()
-    deleteAt: Date;
+  @OneToMany(() => UsuarioTurno, (UsuarioTurno) => UsuarioTurno.userTurno)
+  usuarioTurno: UsuarioTurno;
 
-    @OneToMany(() => UsuarioTurno, UsuarioTurno => UsuarioTurno.userTurno)
-    usuarioTurno: UsuarioTurno;
+  @ManyToOne(() => Rol, (rol) => rol.rolUser, { onDelete: 'CASCADE' })
+  rol: Rol; //corregir
 
-    @ManyToOne(() => Rol, (rol) => rol.rolUser, { onDelete: 'CASCADE' })
-    rol: Rol;//corregir
+  @OneToMany(() => HorasExtra, (HorasExtra) => HorasExtra.usuario)
+  userHoraExtra: HorasExtra;
 
-    @OneToMany(() => HorasExtra, HorasExtra => HorasExtra.usuario)
-    userHoraExtra: HorasExtra;
-
-    @ManyToOne(() => Pregunta, (preguntas) => preguntas.usuarioPreguntas, { onDelete: 'CASCADE' })
-    preguntas: Pregunta;
-
+  @ManyToOne(() => Pregunta, (preguntas) => preguntas.usuarioPreguntas, {
+    onDelete: 'CASCADE',
+  })
+  preguntas: Pregunta;
 }
