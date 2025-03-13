@@ -14,8 +14,8 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-   // origin: 'http://localhost:4200', // Permitir solicitudes solo desde Angular
-     origin: 'https://front-horas-two.vercel.app', // Permitir solicitudes solo desde Angular
+   origin: 'http://localhost:4200', // Permitir solicitudes solo desde Angular
+   //  origin: 'https://front-horas-two.vercel.app', // Permitir solicitudes solo desde Angular
 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

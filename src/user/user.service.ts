@@ -73,4 +73,42 @@ export class UserService {
   async remove(id: number) {
     return await this.userRepository.softDelete({ id });
   }
+
+  async recoverPassword(
+    cedula: number,
+    respuestaSeguridad: string,
+    newPassword: string,
+  ) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { cedula },
+        relations: ['preguntas'],
+      });
+
+      if (!user) {
+        return { success: false, message: 'Usuario no encontrado' };
+      }
+
+      const userRespuesta = String(user.respuestaSeguridad)
+        .trim()
+        .toLowerCase();
+      const inputRespuesta = String(respuestaSeguridad).trim().toLowerCase();
+
+      if (userRespuesta !== inputRespuesta) {
+        console.log('Las respuestas NO coinciden - debería fallar');
+        return { success: false, message: 'Respuesta de seguridad incorrecta' };
+      }
+
+      user.password = newPassword;
+      await this.userRepository.save(user);
+      return {
+        success: true,
+        message: 'Contraseña actualizada exitosamente',
+        user: new GetUserDto(user),
+      };
+    } catch (error) {
+      console.error('Error recuperando contraseña:', error);
+      throw error;
+    }
+  }
 }
