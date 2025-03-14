@@ -1,34 +1,46 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { TurnoService } from './turno.service';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
+import { Turno } from './entities/turno.entity';
 
 @Controller('turno')
 export class TurnoController {
   constructor(private readonly turnoService: TurnoService) {}
 
   @Post()
-  create(@Body() createTurnoDto: CreateTurnoDto) {
+  create(@Body() createTurnoDto: CreateTurnoDto): Promise<Turno> {
     return this.turnoService.create(createTurnoDto);
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<Turno[]> {
     return this.turnoService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.turnoService.findOne(id);
+  findOne(@Param('id') id: string): Promise<Turno> {
+    return this.turnoService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTurnoDto: UpdateTurnoDto) {
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateTurnoDto: UpdateTurnoDto,
+  ): Promise<Turno> {
     return this.turnoService.update(+id, updateTurnoDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<void> {
     return this.turnoService.remove(+id);
   }
 }

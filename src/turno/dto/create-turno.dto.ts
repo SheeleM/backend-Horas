@@ -1,30 +1,29 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  IsNotEmpty,
+  IsString
+} from 'class-validator';
 
 export class CreateTurnoDto {
+  @IsString()
+  @IsNotEmpty()
+  codigo: string;
 
-    @IsInt()
-    id: number;
-  
-    @IsString()
-    @IsNotEmpty()
-    codigo: string;
-  
-    @IsNotEmpty()
-    horaInicio: string;
-  
-    @IsNotEmpty()
-    horaFin: string;
-  
-    @IsNotEmpty()
-    guardiaInicio: Date;
-  
-    @IsNotEmpty()
-    guardiaFin: Date;
-  
-    @IsNotEmpty()
-    creado: Date;
-  
-    @IsOptional()
-    actualizado?: Date;
+  @IsNotEmpty()
+  nombre: string;
 
+  @IsNotEmpty()
+  @IsString()
+  horaInicio: string;
+
+  @IsNotEmpty()
+  @IsString()
+  horaFin: string;
+
+  @IsString()
+  @IsNotEmpty()
+  diaInicio: string;
+
+  @IsString()
+  @IsNotEmpty()
+  diaFin: string;
 }
