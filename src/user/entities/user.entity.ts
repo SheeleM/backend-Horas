@@ -27,7 +27,7 @@ export class User {
   @Column()
   respuestaSeguridad: string;
 
-  @Column()
+  @Column({select: false})
   password: string;
 
   @Column({ type: 'boolean', default: true })
