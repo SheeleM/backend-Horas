@@ -15,7 +15,7 @@ export class GetUserDto {
   @IsInt()
   @IsPositive()
   cedula: number;
-
+//hola
   estado: boolean;
 
   @Type(() => Object)
