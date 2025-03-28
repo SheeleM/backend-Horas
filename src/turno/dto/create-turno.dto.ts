@@ -1,6 +1,8 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { Column } from 'typeorm';
 
 export class CreateTurnoDto {
+  @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
   codigo: string;
