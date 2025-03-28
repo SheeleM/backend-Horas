@@ -1,11 +1,6 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateTurnoDto } from './create-turno.dto';
-import { IsDate, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
-export class UpdateTurnoDto extends PartialType(CreateTurnoDto) {
-  @IsInt()
-  id: number;
-
+export class UpdateTurnoDto {
   @IsString()
   @IsNotEmpty()
   codigo: string;
@@ -15,11 +10,9 @@ export class UpdateTurnoDto extends PartialType(CreateTurnoDto) {
   nombre: string;
 
   @IsNotEmpty()
-  @IsString()
   horaInicio: string;
 
   @IsNotEmpty()
-  @IsString()
   horaFin: string;
 
   @IsString()

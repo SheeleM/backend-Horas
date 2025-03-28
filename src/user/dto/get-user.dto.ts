@@ -1,8 +1,7 @@
-import { Type } from "class-transformer";
-import { IsInt, IsPositive, IsString, MinLength } from "class-validator";
+import { Type } from 'class-transformer';
+import { IsInt, IsPositive, IsString, MinLength } from 'class-validator';
 
 export class GetUserDto {
-
   @Type(() => Number)
   @IsInt()
   @IsPositive()
@@ -23,10 +22,12 @@ export class GetUserDto {
   rol: { idRol: number; nombre: string } | null;
 
   constructor(user: any) {
-    this.id=user.id;
+    this.id = user.id;
     this.fullname = user.fullname;
     this.cedula = user.cedula;
     this.estado = user.estado;
-    this.rol = user.rol ? { idRol: user.rol.idRol, nombre: user.rol.nombre } : null;
+    this.rol = user.rol
+      ? { idRol: user.rol.idRol, nombre: user.rol.nombre }
+      : null;
   }
 }

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -109,6 +109,80 @@ export class UserService {
     } catch (error) {
       console.error('Error recuperando contraseña:', error);
       throw error;
+    }
+  }
+
+  async updatePasswordAdmin(cedula: number, newPassword: string) {
+    try {
+      // Validar que cedula es un número válido
+      if (!cedula || isNaN(cedula)) {
+        return {
+          success: false,
+          message: 'Cédula inválida',
+        };
+      }
+
+      const user = await this.userRepository.findOne({ where: { cedula } });
+
+      if (!user) {
+        return { affected: 0, message: 'User not found' };
+      }
+
+      user.password = newPassword;
+      await this.userRepository.save(user);
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      throw error;
+    }
+  }
+
+  async getSecurityQuestion(cedula: number) {
+    try {
+      Logger.error('Mensaje de error sssssssssssssssss'); // Nivel: error
+      // Validación inicial más robusta
+      if (!cedula || isNaN(cedula)) {
+        return {
+          success: false,
+          message: 'Cédula inválida',
+        };
+      }
+
+      // Buscar por cédula con relaciones completas
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.preguntas', 'pregunta')
+        .where('user.cedula = :cedula', { cedula })
+        .andWhere('user.deleteAt IS NULL')
+        .getOne();
+
+      // Si no se encuentra el usuario
+      if (!user) {
+        return {
+          success: false,
+          message: 'Usuario no encontrado',
+        };
+      }
+
+      // Verificar si tiene pregunta de seguridad asociada
+      if (!user.preguntas) {
+        return {
+          success: false,
+          message: 'No se encontró pregunta de seguridad para este usuario',
+        };
+      }
+
+      // Devolver pregunta de seguridad
+      return {
+        success: true,
+        question: user.preguntas.pregunta, // Acceso directo a la propiedad pregunta
+        userId: user.id,
+      };
+    } catch (error) {
+      console.error('Error obteniendo pregunta de seguridad:', error);
+      return {
+        success: false,
+        message: 'Error interno al obtener la pregunta de seguridad',
+      };
     }
   }
 }

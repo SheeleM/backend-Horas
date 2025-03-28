@@ -2,8 +2,9 @@ import { UsuarioTurno } from 'src/usuario-turno/entities/usuario-turno.entity';
 import {
   Column,
   Entity,
+  Index,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity()
@@ -14,13 +15,14 @@ export class Turno {
   @Column()
   nombre: string;
 
-  @Column()
+  @Column({ unique: true })
+  @Index({ unique: true })
   codigo: string;
 
-  @Column({ type: 'time' })
+  @Column()
   horaInicio: Date;
 
-  @Column({ type: 'time' })
+  @Column()
   horaFin: Date;
 
   @Column()

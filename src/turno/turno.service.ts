@@ -1,9 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Turno } from './entities/turno.entity';
-import { Repository } from 'typeorm';
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 @Injectable()
 export class TurnoService {
@@ -48,7 +63,6 @@ export class TurnoService {
   async update(id: number, updateTurnoDto: UpdateTurnoDto): Promise<Turno> {
     const turno = await this.findOne(id);
 
-    // Update only the provided fields
     if (updateTurnoDto.codigo !== undefined) {
       turno.codigo = updateTurnoDto.codigo;
     }
@@ -69,6 +83,8 @@ export class TurnoService {
     }
 
     turno.actualizado = new Date();
+    turno.horaFin = new Date(updateTurnoDto.horaFin);
+    turno.horaInicio = new Date(updateTurnoDto.horaInicio);
 
     return this.turnoRepository.save(turno);
   }

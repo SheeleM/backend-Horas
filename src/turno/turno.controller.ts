@@ -32,10 +32,7 @@ export class TurnoController {
   }
 
   @Put(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateTurnoDto: UpdateTurnoDto,
-  ): Promise<Turno> {
+  update(@Param('id') id: string, @Body() updateTurnoDto: UpdateTurnoDto) {
     return this.turnoService.update(+id, updateTurnoDto);
   }
 
