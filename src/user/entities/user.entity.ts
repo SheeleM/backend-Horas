@@ -13,7 +13,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['cedula'])
+
 export class User {
   @PrimaryGeneratedColumn()
   id: number;

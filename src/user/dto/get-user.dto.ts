@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsInt, IsPositive, IsString, MinLength } from 'class-validator';
 
 export class GetUserDto {
@@ -21,13 +21,18 @@ export class GetUserDto {
   @Type(() => Object)
   rol: { idRol: number; nombre: string } | null;
 
-  constructor(user: any) {
-    this.id = user.id;
-    this.fullname = user.fullname;
-    this.cedula = user.cedula;
-    this.estado = user.estado;
-    this.rol = user.rol
-      ? { idRol: user.rol.idRol, nombre: user.rol.nombre }
+  constructor(partial: Partial<GetUserDto>) {
+    this.id = partial.id !== undefined ? Number(partial.id) : 0; // Asigna 0 si id es undefined o null.
+    this.fullname = partial.fullname ?? '';
+    this.cedula = partial.cedula !== undefined ? Number(partial.cedula) : 0; // Asigna 0 si cedula es undefined o null.
+    this.estado =
+      partial.estado !== undefined ? Boolean(partial.estado) : false; // Asigna false si estado es undefined.
+    this.rol = partial.rol
+      ? {
+          idRol:
+            partial.rol.idRol !== undefined ? Number(partial.rol.idRol) : 0, // Asigna 0 si idRol es undefined.
+          nombre: partial.rol.nombre ?? '', // Asigna una cadena vacía si nombre es undefined.
+        }
       : null;
   }
 }

@@ -103,4 +103,13 @@ export class TurnoService {
       relations: ['usuarioTurno'],
     });
   }
+
+// turno.service.ts
+async findOnlyNames(): Promise<any[]> {
+  const turnos = await this.turnoRepository.find({
+    select: ['codigo'], // solo selecciona la columna 'nombre'
+  });
+
+  return turnos;
+}
 }

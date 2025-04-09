@@ -135,19 +135,13 @@ export class UserService {
       throw error;
     }
   }
-
+  
   async getSecurityQuestion(cedula: number) {
-    try {
-      Logger.error('Mensaje de error sssssssssssssssss'); // Nivel: error
-      // Validación inicial más robusta
-      if (!cedula || isNaN(cedula)) {
-        return {
-          success: false,
-          message: 'Cédula inválida',
-        };
-      }
 
-      // Buscar por cédula con relaciones completas
+
+    try {
+
+
       const user = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.preguntas', 'pregunta')
@@ -155,7 +149,6 @@ export class UserService {
         .andWhere('user.deleteAt IS NULL')
         .getOne();
 
-      // Si no se encuentra el usuario
       if (!user) {
         return {
           success: false,
@@ -163,7 +156,6 @@ export class UserService {
         };
       }
 
-      // Verificar si tiene pregunta de seguridad asociada
       if (!user.preguntas) {
         return {
           success: false,
@@ -171,10 +163,9 @@ export class UserService {
         };
       }
 
-      // Devolver pregunta de seguridad
       return {
         success: true,
-        question: user.preguntas.pregunta, // Acceso directo a la propiedad pregunta
+        question: user.preguntas.pregunta,
         userId: user.id,
       };
     } catch (error) {

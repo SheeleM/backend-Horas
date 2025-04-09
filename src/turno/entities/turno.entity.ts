@@ -15,8 +15,9 @@ export class Turno {
   @Column()
   nombre: string;
 
-  @Column({ unique: true })
+  
   @Index({ unique: true })
+  @Column()
   codigo: string;
 
   @Column()

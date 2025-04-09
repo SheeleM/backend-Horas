@@ -17,6 +17,7 @@ export class LoginController {
   
   @Post('login')
   async login(@Body() createLoginDto: CreateLoginDto) {
+    console.log("entro al login");
     return this.loginService.login(createLoginDto);
   }
 

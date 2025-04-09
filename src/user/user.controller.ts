@@ -8,16 +8,14 @@ import {
   Put,
   BadRequestException,
   Query,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RecoverPasswordDto } from './dto/update-password.dto';
 import { updatePasswordAdminDto } from './dto/update-password-admin';
-import { SecurityQuestionRequestDto } from './dto/SecurityQuestionRequestDto.dto';
-import { SecurityQuestionResponseDto } from './dto/SecurityQuestionResponseDto.dto';
+// import { SecurityQuestionRequestDto } from './dto/security-question-request.dto';
+// import { SecurityQuestionResponseDto } from './dto/security-question-response.dto';
 
 @Controller('user')
 export class UserController {
@@ -35,7 +33,11 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+    const userId = Number(id);
+    if (isNaN(userId)) {
+      throw new BadRequestException('ID inválido');
+    }
+    return this.userService.findOne(userId);
   }
 
   @Put()
@@ -45,84 +47,51 @@ export class UserController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+    const userId = Number(id);
+    if (isNaN(userId)) {
+      throw new BadRequestException('ID inválido');
+    }
+    return this.userService.remove(userId);
   }
 
-  @Post('/recover')
-  async recoverPassword(@Body() recoverPasswordDto: RecoverPasswordDto) {
-    const { cedula, respuestaSeguridad, newPassword } = recoverPasswordDto;
-    return await this.userService.recoverPassword(
-      cedula,
-      respuestaSeguridad,
-      newPassword,
-    );
+  @Post('recover')
+  async recoverPassword(@Body() dto: RecoverPasswordDto) {
+    const { cedula, respuestaSeguridad, newPassword } = dto;
+    return this.userService.recoverPassword(cedula, respuestaSeguridad, newPassword);
   }
 
-  @Post('/update-password-admin')
-  async updatePasswordAdmin(
-    @Body() updatePasswordAdminDto: updatePasswordAdminDto, // Tipo corregido
-  ) {
-    const { cedula, newPassword } = updatePasswordAdminDto; // Propiedad corregida
+  @Post('update-password-admin')
+  async updatePasswordAdmin(@Body() dto: updatePasswordAdminDto) {
+    const { cedula, newPassword } = dto;
 
-    // Verificar que cédula no es undefined
-    if (cedula === undefined) {
+    if (!cedula) {
       throw new BadRequestException('La cédula es requerida');
     }
 
-    // Convertir explícitamente a número si es necesario
     const cedulaNum = Number(cedula);
-
-    // Verificar que sea un número válido
     if (isNaN(cedulaNum)) {
       throw new BadRequestException('La cédula debe ser un número válido');
     }
 
-    return await this.userService.updatePasswordAdmin(cedulaNum, newPassword);
+    return this.userService.updatePasswordAdmin(cedulaNum, newPassword);
   }
 
-  /*
-  @Get('/security-question')
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async getSecurityQuestion(
-    @Query() request: SecurityQuestionRequestDto,
-  ): Promise<SecurityQuestionResponseDto> {
-    return this.userService.getSecurityQuestion(request.cedula);
-  }
-*/
-
-  @Get('/security-question')
-  async getSecurityQuestion(@Query('cedula') cedula: string) {
-    try {
-      // Validación de entrada
+  @Get('security-question/cedula=:cedula')
+  async findByCedular(@Param('cedula') cedula: string) {
       if (!cedula) {
-        return {
-          success: false,
-          message: 'Cédula es requerida',
-        };
-      }
+      throw new BadRequestException('La cédula es requerida');
+    }
 
-      // Convertir a número
-      const parsedCedula = parseInt(cedula, 10);
+    const parsedCedula = Number(cedula);
+    if (isNaN(parsedCedula)) {
+      throw new BadRequestException('La cédula debe ser un número válido');
+    }
 
-      // Validar que sea un número válido
-      if (isNaN(parsedCedula)) {
-        return {
-          success: false,
-          message: 'Cédula inválida',
-        };
-      }
-
-      // Llamar al servicio para obtener la pregunta de seguridad
+    try {
       return await this.userService.getSecurityQuestion(parsedCedula);
     } catch (error) {
-      console.error(
-        'Error en el controlador al obtener pregunta de seguridad:',
-        error,
-      );
-      return {
-        success: false,
-        message: 'Error interno del servidor',
-      };
+      console.error('Error al obtener la pregunta de seguridad:', error);
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 }
