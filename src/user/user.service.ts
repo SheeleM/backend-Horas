@@ -176,4 +176,14 @@ export class UserService {
       };
     }
   }
+
+
+  // turno.service.ts
+async findOnlyNames(): Promise<any[]> {
+  const usuarios = await this.userRepository.find({
+    select: ['fullname', 'id'], // solo selecciona la columna 'nombre'
+  });
+
+  return usuarios;
+}
 }

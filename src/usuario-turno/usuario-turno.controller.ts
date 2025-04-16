@@ -9,6 +9,7 @@ export class UsuarioTurnoController {
 
   @Post()
   create(@Body() createUsuarioTurnoDto: CreateUsuarioTurnoDto) {
+    console.log("entroooooooooooal create turni usuarioooooooooooo",createUsuarioTurnoDto)
     return this.usuarioTurnoService.create(createUsuarioTurnoDto);
   }
 

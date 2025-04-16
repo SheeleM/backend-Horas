@@ -94,4 +94,10 @@ export class UserController {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  @Post('fullname')
+  findOnlyNames(): Promise<any[]> {
+    console.log("NUEVOOOO METODO USUARIOS");
+    return this.userService.findOnlyNames();
+  }
 }

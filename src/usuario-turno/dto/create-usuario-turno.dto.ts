@@ -1,15 +1,19 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional } from "class-validator";
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateUsuarioTurnoDto {
 
- @IsInt()
-  idUsuarioTurno: number;
+// @IsInt()
+  //idUsuarioTurno: number;
 
+  @IsString()
+  mes:string; 
+  
   @IsInt()
   turnoFK: number;
 
   @IsInt()
   usuarioFK: number;
+
 
   @IsNotEmpty()
   fechaInicio: Date;
@@ -17,12 +21,12 @@ export class CreateUsuarioTurnoDto {
   @IsNotEmpty()
   fechaFin: Date;
 
-  @IsBoolean()
-  activo: boolean;
+  //@IsBoolean()
+  //activo: boolean;
 
-  @IsNotEmpty()
-  creado: Date;
+  //@IsNotEmpty()
+  //creado: Date;
 
-  @IsOptional()
-  actualizado?: Date;
+  //@IsOptional()
+  //actualizado?: Date;
 }

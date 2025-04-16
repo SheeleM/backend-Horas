@@ -10,28 +10,25 @@ export class UsuarioTurno {
       idUsuarioTurno: number;
 
       @Column()
+      mes : string;
+
+      @Column()
       turnoFK: number;
 
       @Column()
-      usuarioFL:number;
+      usuarioFK:number;
 
       @Column({type:'timestamp'})
-      @Column()
       fechaInicio: Date;
 
       @Column({type:'timestamp'})
-      @Column()
       fechaFin: Date;
 
-      @Column()
-      activo:boolean;
 
       @Column({type:'timestamp'})
-      @Column()
       creado:Date;
 
       @Column({type:'timestamp'})
-      @Column()
       actualizado: Date;
 
       @ManyToOne(() => User, (user) => user.usuarioTurno, { onDelete: 'CASCADE' })
