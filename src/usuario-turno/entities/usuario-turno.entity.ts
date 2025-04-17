@@ -1,7 +1,7 @@
 import { Turno } from "src/turno/entities/turno.entity";
 import { TurnoController } from "src/turno/turno.controller";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Timestamp } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Timestamp } from "typeorm";
 
 @Entity()
 export class UsuarioTurno {
@@ -31,10 +31,25 @@ export class UsuarioTurno {
       @Column({type:'timestamp'})
       actualizado: Date;
 
+      /*
       @ManyToOne(() => User, (user) => user.usuarioTurno, { onDelete: 'CASCADE' })
       userTurno: User;
+*/
+@ManyToOne(() => User, (user) => user.usuarioTurno, { 
+      onDelete: 'CASCADE',
+      eager: true // This will always load the relation
+    })
+    @JoinColumn({ name: 'usuarioFK' }) // This explicitly defines which column holds the foreign key
+    userTurno: User;
 
+    /*
       @ManyToOne(() => Turno, (turno) => turno.usuarioTurno, { onDelete: 'CASCADE' })
       turno: Turno;
-
+*/
+@ManyToOne(() => Turno, (turno) => turno.usuarioTurno, { 
+      onDelete: 'CASCADE',
+      eager: true // si lo quieres traer siempre, opcional
+    })
+    @JoinColumn({ name: 'turnoFK' }) // <- Esto también puedes incluirlo
+    turno: Turno;
 }
