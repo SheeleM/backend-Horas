@@ -3,6 +3,8 @@ import { UsuarioTurno } from "../entities/usuario-turno.entity";
 
 export class GetUsuarioTurnoDto {
 
+  @IsInt()
+  idUsuarioTurno: number;
 // @IsInt()
   //idUsuarioTurno: number;
   @IsInt()
@@ -18,6 +20,8 @@ export class GetUsuarioTurnoDto {
   codigo: string;
 
   constructor(entity: UsuarioTurno) {
+    this.idUsuarioTurno = entity.idUsuarioTurno; // 👈 Asegúrate que viene de la entidad
+
     // More robust handling of the relationship
     this.fullname = entity.userTurno?.fullname || 
                    `User ID: ${entity.usuarioFK}` || 

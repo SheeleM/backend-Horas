@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateUsuarioTurnoDto {
@@ -5,9 +6,10 @@ export class CreateUsuarioTurnoDto {
 // @IsInt()
   //idUsuarioTurno: number;
 
-  @IsString()
-  mes:string; 
-  
+  @IsInt()
+  mes:number; 
+
+  @Type(() => Number)  // Asegura la conversión a número
   @IsInt()
   turnoFK: number;
 

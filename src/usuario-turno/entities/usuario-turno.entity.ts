@@ -10,7 +10,7 @@ export class UsuarioTurno {
       idUsuarioTurno: number;
 
       @Column()
-      mes : string;
+      mes : number;
 
       @Column()
       turnoFK: number;
