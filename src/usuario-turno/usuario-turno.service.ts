@@ -21,7 +21,7 @@ export class UsuarioTurnoService {
 
     async create(createUsuarioTurnoDto: CreateUsuarioTurnoDto): Promise<UsuarioTurno> {
       const usuarioTurno = new UsuarioTurno();
-      usuarioTurno.mes = createUsuarioTurnoDto.mes;
+    //  usuarioTurno.mes = createUsuarioTurnoDto.mes;
       usuarioTurno.turnoFK=createUsuarioTurnoDto.turnoFK;
       usuarioTurno.usuarioFK=createUsuarioTurnoDto.usuarioFK;
       usuarioTurno.fechaInicio=createUsuarioTurnoDto.fechaInicio;
@@ -81,7 +81,7 @@ async update(id: number, updateUsuarioTurnoDto: UpdateUsuarioTurnoDto): Promise<
     };
     
     // Solo añade los campos que vienen en el DTO
-    if (updateUsuarioTurnoDto.mes !== undefined) updateData.mes = updateUsuarioTurnoDto.mes;
+    //if (updateUsuarioTurnoDto.mes !== undefined) updateData.mes = updateUsuarioTurnoDto.mes;
     if (updateUsuarioTurnoDto.turnoFK !== undefined) updateData.turnoFK = updateUsuarioTurnoDto.turnoFK;
     if (updateUsuarioTurnoDto.usuarioFK !== undefined) updateData.usuarioFK = updateUsuarioTurnoDto.usuarioFK;
     

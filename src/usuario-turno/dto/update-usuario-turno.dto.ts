@@ -10,8 +10,8 @@ export class UpdateUsuarioTurnoDto  extends PartialType(CreateUsuarioTurnoDto){
   idUsuarioTurno: number;
 
 
-  @IsInt()
-  mes:number; 
+  //@IsInt()
+ // mes:number; 
 
   @Type(() => Number)  // Asegura la conversión a número
   @IsInt()

@@ -6,8 +6,8 @@ export class CreateUsuarioTurnoDto {
 // @IsInt()
   //idUsuarioTurno: number;
 
-  @IsInt()
-  mes:number; 
+ // @IsInt()
+  //mes:number; 
 
   @Type(() => Number)  // Asegura la conversión a número
   @IsInt()
@@ -19,6 +19,7 @@ export class CreateUsuarioTurnoDto {
 
   @IsNotEmpty()
   fechaInicio: Date;
+  
 
   @IsNotEmpty()
   fechaFin: Date;

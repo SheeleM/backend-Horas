@@ -9,8 +9,8 @@ export class UsuarioTurno {
       @PrimaryGeneratedColumn()
       idUsuarioTurno: number;
 
-      @Column()
-      mes : number;
+    //  @Column()
+     // mes : number;
 
       @Column()
       turnoFK: number;
