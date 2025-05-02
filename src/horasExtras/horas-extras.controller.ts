@@ -1,34 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { HorasExtrasService } from './horas-extras.service';
+import { Usuario } from './../usuarios/entities/usuario.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Session } from '@nestjs/common';
 import { CreateHorasExtraDto } from './dto/create-horas-extra.dto';
-import { UpdateHorasExtraDto } from './dto/update-horas-extra.dto';
+import { HorasExtraService } from './horas-extras.service';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/login/JwtAuthGuard';
+import { Request } from 'express';
+import * as session from 'express-session'
 
+// Define la interfaz para el Request con user
+interface RequestWithUser extends Request {
+  user: {
+    id: number;
+    username: string;
+    roles: string[];
+  };
+}
 @Controller('horas-extras')
+@UseGuards(AuthGuard('jwt')) // Usa el nombre de la estrategia: 'jwt'
 export class HorasExtrasController {
-  constructor(private readonly horasExtrasService: HorasExtrasService) {}
+  constructor(private readonly horasExtrasService: HorasExtraService) {}
 
   @Post()
-  create(@Body() createHorasExtraDto: CreateHorasExtraDto) {
-    return this.horasExtrasService.create(createHorasExtraDto);
+  create(@Req() req: RequestWithUser, @Body() createHorasExtraDto: CreateHorasExtraDto, @Session() session: Record<string, any>) {
+
+    return this.horasExtrasService.create(createHorasExtraDto, session.userId);
   }
 
-  @Get()
-  findAll() {
-    return this.horasExtrasService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.horasExtrasService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHorasExtraDto: UpdateHorasExtraDto) {
-    return this.horasExtrasService.update(+id, updateHorasExtraDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.horasExtrasService.remove(+id);
-  }
 }

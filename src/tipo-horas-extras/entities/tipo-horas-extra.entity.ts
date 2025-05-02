@@ -1,4 +1,4 @@
-import { DetalleHoraExtra } from "src/detalle-hora-extras/entities/detalle-hora-extra.entity";
+import { HorasExtra } from "src/horasExtras/entities/horas-extra.entity";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
@@ -7,28 +7,26 @@ export class TipoHorasExtra {
     @PrimaryGeneratedColumn()
     id :number;
     
-    @Column()
-    nombre: string;
+    @Column({ unique: true })
+    codigoHoraExtra: string;
 
     @Column()
-    factorMultiplicador: number;
+    descripcion: string;
 
-    @Column()
-    formula: string;
+    @Column({ type: 'timestamp' })
+    horaInicio: Date;
 
-    @Column()
-    desctripcion: string;
+    @Column({ type: 'timestamp' })
+    horaFin: Date;
 
     @Column({type:'timestamp'})
-    @Column()
+
     creado: Date;
 
     @Column({type:'timestamp'})
-    @Column()
     actualizado: Date;
 
-    @OneToMany(() => DetalleHoraExtra, (detalleHoraExtra) => detalleHoraExtra.tipoHora)
-    HoraExtraDetalle: DetalleHoraExtra[];
-    
-    
+    // Relación: Un tipo de hora extra puede estar en varias horas extra
+    @OneToMany(() => HorasExtra, (horasExtra) => horasExtra.tipoHoraExtra)
+    horasExtra: HorasExtra[];
 }

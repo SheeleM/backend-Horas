@@ -37,13 +37,13 @@ export class User {
   deleteAt: Date;
 
   @OneToMany(() => UsuarioTurno, (UsuarioTurno) => UsuarioTurno.userTurno)
-  usuarioTurno: UsuarioTurno;
+  usuarioTurno: UsuarioTurno[]; // <-- Debe ser un array
 
   @ManyToOne(() => Rol, (rol) => rol.rolUser, { onDelete: 'CASCADE' })
   rol: Rol; //corregir
 
   @OneToMany(() => HorasExtra, (HorasExtra) => HorasExtra.usuario)
-  userHoraExtra: HorasExtra;
+  userHoraExtra: HorasExtra[]; // <-- Debe ser un array
 
   @ManyToOne(() => Pregunta, (preguntas) => preguntas.usuarioPreguntas, {
     onDelete: 'CASCADE',

@@ -2,33 +2,26 @@ import {
   IsDecimal,
   IsInt,
   IsNotEmpty,
-  IsOptional,
+
   IsString,
 } from 'class-validator';
 
 export class CreateTipoHorasExtraDto {
-  @IsInt()
-  id: number;
+
 
   @IsString()
   @IsNotEmpty()
-  nombre: string;
-
-  @IsDecimal()
-  @IsNotEmpty()
-  factorMultiplicador: number;
+  codigoHoraExtra: string;
 
   @IsString()
   @IsNotEmpty()
-  formula: string;
-
-  @IsString()
-  @IsOptional()
-  descripcion?: string;
+  descripcion: string;
 
   @IsNotEmpty()
-  creado: Date;
+  horaInicio: Date;
+  
+  @IsNotEmpty()
+  horaFin: Date;
 
-  @IsOptional()
-  actualizado?: Date;
+
 }

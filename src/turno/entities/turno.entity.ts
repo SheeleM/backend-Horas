@@ -1,4 +1,5 @@
 import { UsuarioTurno } from 'src/usuario-turno/entities/usuario-turno.entity';
+import { HorasExtra } from 'src/horasExtras/entities/horas-extra.entity';
 import {
   Column,
   Entity,
@@ -40,4 +41,6 @@ export class Turno {
 
   @OneToMany(() => UsuarioTurno, (UsuarioTurno) => UsuarioTurno.turno)
   usuarioTurno: UsuarioTurno;
+
+
 }

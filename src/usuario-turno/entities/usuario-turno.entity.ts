@@ -1,7 +1,8 @@
 import { Turno } from "src/turno/entities/turno.entity";
 import { TurnoController } from "src/turno/turno.controller";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Timestamp } from "typeorm";
+import { HorasExtra } from "src/horasExtras/entities/horas-extra.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp } from "typeorm";
 
 @Entity()
 export class UsuarioTurno {
@@ -52,4 +53,9 @@ export class UsuarioTurno {
     })
     @JoinColumn({ name: 'turnoFK' }) // <- Esto también puedes incluirlo
     turno: Turno;
+
+    // Relación: Un usuario-turno puede tener muchas horas extra
+    @OneToMany(() => HorasExtra, (horasExtra) => horasExtra.usuarioTurno)
+    horasExtras: HorasExtra[];
+
 }

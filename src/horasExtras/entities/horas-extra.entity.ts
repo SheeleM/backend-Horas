@@ -1,5 +1,7 @@
-import { DetalleHoraExtra } from "src/detalle-hora-extras/entities/detalle-hora-extra.entity";
+import { TipoHorasExtra } from "src/tipo-horas-extras/entities/tipo-horas-extra.entity";
 import { User } from "src/user/entities/user.entity";
+import { Turno } from "src/turno/entities/turno.entity";
+import { UsuarioTurno } from "src/usuario-turno/entities/usuario-turno.entity";
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 
 @Entity()
@@ -8,8 +10,8 @@ export class HorasExtra {
     @PrimaryGeneratedColumn()
     idHoraExtra :number; 
 
-    @Column()
-    idUsuarioTurnoFK: number; 
+    @Column({type:'timestamp'})
+    fecha:Date;
 
     @Column()
     horaInicio: Date; 
@@ -18,25 +20,28 @@ export class HorasExtra {
     horaFin :Date;
 
     @Column()
-    descripcion: string;
-    
-    @Column()
-    estado: boolean;
+    ticket: string;
 
     @Column()
-    valorHoraBase:number; 
+    usuarioE: number;
+
+    @Column()
+    turno: number;
 
     @Column({type:'timestamp'})
-    @Column()
     fechaCreacion: Date;
 
     @Column({type:'timestamp'})
-    @Column()
     fechaActualizacion :Date;
 
     @ManyToOne(() => User, User => User.userHoraExtra)
     usuario: User;
      
-    @OneToMany(() => DetalleHoraExtra, (detalleHoraExtra) => detalleHoraExtra.horaextra)
-    HoraExtraDetalle: DetalleHoraExtra[]; // Relación inversa
+    @ManyToOne(() => TipoHorasExtra, tipoHorasExtra => tipoHorasExtra.horasExtra)
+    tipoHoraExtra: TipoHorasExtra;
+
+    // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
+    @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras)
+    usuarioTurno: UsuarioTurno;
+
 }

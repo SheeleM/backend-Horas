@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Session } from '@nestjs/common';
 import { CreateLoginDto } from './dto/create-login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
@@ -13,7 +13,7 @@ export class LoginService {
     private jwtService: JwtService,
   ) {}
 
-  async login(createLoginDto: CreateLoginDto) {
+  async login(createLoginDto: CreateLoginDto,  session: Record<string, any>) {
     const { cedula, password } = createLoginDto;
     const cedulaNum = Number(cedula);
 
@@ -22,8 +22,8 @@ export class LoginService {
       relations: ['rol'],
     });
 
-    console.log('¿Usuario existe?', user ? 'Sí' : 'No');
-    console.log('¿activo?', user?.estado ? 'activo' : 'inactivo');
+   // console.log('¿Usuario existe?', user ? 'Sí' : 'No');
+    //console.log('¿activo?', user?.estado ? 'activo' : 'inactivo');
 
     if (!user) {
       console.log('Usuario no encontrado o inactivo');
@@ -44,7 +44,7 @@ export class LoginService {
       username: user.cedula,
       roles: [user.rol.nombre],
     };
-
+    session.userId = user.id; // Guardar el ID del usuario en la sesión
     return {
       user: {
         id: user.id,
