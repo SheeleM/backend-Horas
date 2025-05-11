@@ -11,7 +11,7 @@ import * as session from 'express-session'
 // Define la interfaz para el Request con user
 interface RequestWithUser extends Request {
   user: {
-    id: number;
+    userId: number;
     username: string;
     roles: string[];
   };
@@ -22,9 +22,15 @@ export class HorasExtrasController {
   constructor(private readonly horasExtrasService: HorasExtraService) {}
 
   @Post()
-  create(@Req() req: RequestWithUser, @Body() createHorasExtraDto: CreateHorasExtraDto, @Session() session: Record<string, any>) {
+  create(@Req() req: RequestWithUser, @Body() createHorasExtraDto: CreateHorasExtraDto) {
+    console.log("Usuario autenticado:", req.user);
+    //const user = req.user as { id: number; username: string; roles: string[] };
 
-    return this.horasExtrasService.create(createHorasExtraDto, session.userId);
+    const userId = req.user.userId;
+    if (!userId) {
+      throw new Error('No se encontró el ID de usuario en req.user');
+    }
+    return this.horasExtrasService.create(createHorasExtraDto, userId);
   }
 
 }

@@ -55,7 +55,9 @@ export class UsuarioTurno {
     turno: Turno;
 
     // Relación: Un usuario-turno puede tener muchas horas extra
-    @OneToMany(() => HorasExtra, (horasExtra) => horasExtra.usuarioTurno)
+    @OneToMany(() => HorasExtra, horasExtra => horasExtra.usuarioTurno, {
+        onDelete: 'CASCADE' // Agregar esta línea
+    })
     horasExtras: HorasExtra[];
 
 }

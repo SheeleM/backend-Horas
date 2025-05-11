@@ -32,4 +32,8 @@ export class CreateUsuarioTurnoDto {
 
   //@IsOptional()
   //actualizado?: Date;
+
+  @IsOptional()
+@IsBoolean()
+calcularPorDias?: boolean = true; // Por defecto, calcular por días configurados en el turno
 }

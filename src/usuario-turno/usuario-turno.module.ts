@@ -1,16 +1,21 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioTurnoService } from './usuario-turno.service';
 import { UsuarioTurnoController } from './usuario-turno.controller';
-import { User } from 'src/user/entities/user.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from 'src/user/user.module';
-import { TurnoModule } from 'src/turno/turno.module';
 import { UsuarioTurno } from './entities/usuario-turno.entity';
+import { Turno } from '../turno/entities/turno.entity';
+import { User } from '../user/entities/user.entity';
+import { TurnoModule } from '../turno/turno.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-    imports:[TypeOrmModule.forFeature([User,UsuarioTurno]),UserModule,TurnoModule],
+  imports: [
+    TypeOrmModule.forFeature([UsuarioTurno, Turno, User]),
+    TurnoModule,
+    UserModule
+  ],
   controllers: [UsuarioTurnoController],
   providers: [UsuarioTurnoService],
-  exports:[UsuarioTurnoService]
+  exports: [UsuarioTurnoService, TypeOrmModule]
 })
 export class UsuarioTurnoModule {}

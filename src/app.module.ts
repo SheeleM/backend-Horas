@@ -12,6 +12,7 @@ import { PreguntasModule } from './preguntas/preguntas.module';
 import { AsignacionTurnoModule } from './asignacion-turno/asignacion-turno.module';
 import { JwtAuthGuard } from './login/JwtAuthGuard';
 import { JwtStrategy } from './login/JwtStrategy';
+import { HelloWordModule } from './HelloWord/HelloWord.module';
 
 
 @Module({
@@ -35,7 +36,8 @@ import { JwtStrategy } from './login/JwtStrategy';
     LoginModule,
     UserModule,
     PreguntasModule,
-    AsignacionTurnoModule
+    AsignacionTurnoModule,
+    HelloWordModule
   ],
   controllers: [],
   providers: [JwtAuthGuard,JwtStrategy],

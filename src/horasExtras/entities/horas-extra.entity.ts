@@ -34,6 +34,13 @@ export class HorasExtra {
     @Column({type:'timestamp'})
     fechaActualizacion :Date;
 
+    // Nuevo campo: cantidad de horas extra
+    @Column('float')
+    cantidadHoras: number;
+
+    @Column()
+    tipoDeHora: string; // Nuevo campo para el tipo calculado
+
     @ManyToOne(() => User, User => User.userHoraExtra)
     usuario: User;
      
@@ -41,7 +48,9 @@ export class HorasExtra {
     tipoHoraExtra: TipoHorasExtra;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
-    @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras)
+    @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras, {
+        onDelete: 'CASCADE' // Agregar esta línea
+    })
     usuarioTurno: UsuarioTurno;
 
 }
