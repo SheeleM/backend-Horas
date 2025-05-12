@@ -106,7 +106,12 @@ export class UsuarioTurnoService {
       return this.usuarioTurnoRepository.save(asignacionesTurno);
     }
     
-    throw new Error('No se pudieron crear asignaciones en el rango de fechas especificado');
+    const nombresDias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const diasPermitidos = diasTurno.map(dia => nombresDias[dia]).join(', ');
+    throw new BadRequestException(
+      `No se pueden crear asignaciones porque las fechas seleccionadas no coinciden con los días configurados para este turno. ` +
+      `Los días permitidos son: ${diasPermitidos}`
+    );
   }
 
   // Método para crear bloques de días consecutivos
