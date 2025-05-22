@@ -1,5 +1,7 @@
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { UsuarioTurno } from "../entities/usuario-turno.entity";
+import { CreateTurnoDto } from "src/turno/dto/create-turno.dto";
+import { Turno } from "src/turno/entities/turno.entity";
 
 export class GetUsuarioTurnoDto {
 
@@ -19,6 +21,9 @@ export class GetUsuarioTurnoDto {
   @IsString()
   codigo: string;
 
+
+  turno: Turno;
+  
   constructor(entity: UsuarioTurno) {
     this.idUsuarioTurno = entity.idUsuarioTurno; // 👈 Asegúrate que viene de la entidad
 
@@ -31,8 +36,7 @@ export class GetUsuarioTurnoDto {
     this.codigo = entity.turno?.codigo ||
                    `Turno ID: ${entity.turnoFK}` ||
                    'Unknown';
-    // For debugging
-    console.log("User relation:", entity.userTurno);
-    console.log("User FK:", entity.usuarioFK);
+    this.turno =  entity.turno
+
   }
 }

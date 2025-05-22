@@ -19,6 +19,14 @@ export class TipoHorasExtra {
     @Column({ type: 'timestamp' })
     horaFin: Date;
 
+    
+    @Column({ type: 'timestamp' })
+    horaInicio2: Date;
+
+    @Column({ type: 'timestamp' })
+    horaFin2: Date;
+
+
     @Column({type:'timestamp'})
 
     creado: Date;

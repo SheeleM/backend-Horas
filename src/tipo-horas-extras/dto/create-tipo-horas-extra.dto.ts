@@ -23,5 +23,12 @@ export class CreateTipoHorasExtraDto {
   @IsNotEmpty()
   horaFin: Date;
 
+    @IsNotEmpty()
+  horaInicio2: Date;
+  
+  @IsNotEmpty()
+  horaFin2: Date;
+
+
 
 }

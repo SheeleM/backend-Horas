@@ -32,6 +32,7 @@ export class UsuarioTurnoService {
     'sabado': 6,
   };
 
+  
   async create(createUsuarioTurnoDto: CreateUsuarioTurnoDto): Promise<UsuarioTurno[] | UsuarioTurno> {
     // Verificar si existen el usuario y el turno
     const [usuario, turno] = await Promise.all([
@@ -114,6 +115,8 @@ export class UsuarioTurnoService {
     );
   }
 
+
+
   // Método para crear bloques de días consecutivos
   private crearBloquesConsecutivos(
     fechaInicio: Date, 
@@ -179,22 +182,31 @@ export class UsuarioTurnoService {
     return result;
   }
 
-  // Verificar si existe asignación que se superpone con otra
-  async verificarSuperposicion(usuarioFK: number, fechaInicio: Date, fechaFin: Date, idExcluir?: number): Promise<boolean> {
-    const query = this.usuarioTurnoRepository.createQueryBuilder('usuarioTurno')
-      .where('usuarioTurno.usuarioFK = :usuarioFK', { usuarioFK })
-      .andWhere(
-        '(usuarioTurno.fechaInicio <= :fechaFin AND usuarioTurno.fechaFin >= :fechaInicio)',
-        { fechaInicio, fechaFin }
-      );
-    
-    if (idExcluir) {
-      query.andWhere('usuarioTurno.idUsuarioTurno != :idExcluir', { idExcluir });
-    }
-    
-    const count = await query.getCount();
-    return count > 0;
+
+
+// Método a agregar o modificar en usuario-turno.service.ts del backend
+async verificarSuperposicion(usuarioFK: number, fechaInicio: Date, fechaFin: Date, idExcluir?: number): Promise<{ existeSuperposicion: boolean, turnoSuperpuesto?: any, usuarioFK: number }> {
+  const query = this.usuarioTurnoRepository.createQueryBuilder('usuarioTurno')
+    .where('usuarioTurno.usuarioFK = :usuarioFK', { usuarioFK })
+    .andWhere(
+      '(usuarioTurno.fechaInicio <= :fechaFin AND usuarioTurno.fechaFin >= :fechaInicio)',
+      { fechaInicio, fechaFin }
+    )
+    .leftJoinAndSelect('usuarioTurno.turno', 'turno')
+    .leftJoinAndSelect('usuarioTurno.userTurno', 'user');
+  
+  if (idExcluir) {
+    query.andWhere('usuarioTurno.idUsuarioTurno != :idExcluir', { idExcluir });
   }
+  
+  const turnoSuperpuesto = await query.getOne();
+  
+  return {
+    existeSuperposicion: !!turnoSuperpuesto,
+    turnoSuperpuesto: turnoSuperpuesto,
+    usuarioFK
+  };
+}
 
   async findAll() {
     const usuarioTurnos = await this.usuarioTurnoRepository.find({
@@ -330,6 +342,18 @@ export class UsuarioTurnoService {
 
     if (result.affected === 0) {
       throw new NotFoundException(`Turno with ID ${id} not found`);
+    }
+  }
+
+   async removeMultiple(ids: number[]): Promise<void> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('No se proporcionaron IDs para eliminar');
+    }
+
+    const result = await this.usuarioTurnoRepository.delete(ids);
+
+    if (result.affected === 0) {
+      throw new NotFoundException('No se encontraron registros para eliminar');
     }
   }
 }
