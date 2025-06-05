@@ -1,4 +1,5 @@
-import { IsDecimal, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsDecimal, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
+import { EstadoHoraExtra } from "../entities/horas-extra.entity";
 
 export class CreateHorasExtraDto {
 
@@ -10,9 +11,20 @@ export class CreateHorasExtraDto {
   ticket: string;
 
   @IsNotEmpty()
-  horaInicio: Date;
+    @IsString()
+      @Matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+        message: 'horaInicio debe tener formato HH:mm'
+      })
+  horaInicio: string;
 
   @IsNotEmpty()
-  horaFin: Date;
+    @IsString()
+      @Matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'horaInicio debe tener formato HH:mm'
+  })
+  horaFin: string;
+
+    estado?: EstadoHoraExtra;
+
 
 }

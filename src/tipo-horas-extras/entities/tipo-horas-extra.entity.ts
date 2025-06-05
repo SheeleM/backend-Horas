@@ -13,18 +13,18 @@ export class TipoHorasExtra {
     @Column()
     descripcion: string;
 
-    @Column({ type: 'timestamp' })
-    horaInicio: Date;
+    @Column({ type: 'time' })
+    horaInicio: string;
 
-    @Column({ type: 'timestamp' })
-    horaFin: Date;
+    @Column({ type: 'time' })
+    horaFin: string;
 
     
-    @Column({ type: 'timestamp' })
-    horaInicio2: Date;
+    @Column({ type: 'time',nullable: true })
+    horaInicio2?: string;
 
-    @Column({ type: 'timestamp' })
-    horaFin2: Date;
+    @Column({ type: 'time',nullable: true })
+    horaFin2?: string;
 
 
     @Column({type:'timestamp'})

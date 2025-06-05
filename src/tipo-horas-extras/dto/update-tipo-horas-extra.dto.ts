@@ -15,9 +15,9 @@ export class UpdateTipoHorasExtraDto extends PartialType(CreateTipoHorasExtraDto
   descripcion: string;
 
   @IsNotEmpty()
-  horaInicio: Date;
+  horaInicio: string;
   
   @IsNotEmpty()
-  horaFin: Date;
+  horaFin: string;
 
 }

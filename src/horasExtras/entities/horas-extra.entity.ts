@@ -2,7 +2,15 @@ import { TipoHorasExtra } from "src/tipo-horas-extras/entities/tipo-horas-extra.
 import { User } from "src/user/entities/user.entity";
 import { Turno } from "src/turno/entities/turno.entity";
 import { UsuarioTurno } from "src/usuario-turno/entities/usuario-turno.entity";
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+
+// Enum para los estados de la hora extra
+export enum EstadoHoraExtra {
+    PENDIENTE = 'PENDIENTE',
+    APROBADA = 'APROBADA',
+    RECHAZADA = 'RECHAZADA',
+    EN_REVISION = 'EN_REVISION'
+}
 
 @Entity()
 export class HorasExtra {
@@ -12,12 +20,14 @@ export class HorasExtra {
 
     @Column({type:'timestamp'})
     fecha:Date;
+    // ✅ Cambio importante: usar type 'time' para almacenar solo HH:MM:SS
+    @Column({ type: 'time' })
+    horaInicio: string; 
 
-    @Column()
-    horaInicio: Date; 
+    // ✅ Cambio importante: usar type 'time' para almacenar solo HH:MM:SS
+    @Column({ type: 'time' })
+    horaFin :string;
 
-    @Column()
-    horaFin :Date;
 
     @Column()
     ticket: string;
@@ -35,17 +45,28 @@ export class HorasExtra {
     fechaActualizacion :Date;
 
     // Nuevo campo: cantidad de horas extra
-    @Column('float')
-    cantidadHoras: number;
+   @Column('float', { nullable: true })
+cantidadHoras: number | null;
 
-    @Column()
-    tipoDeHora: string; // Nuevo campo para el tipo calculado
+    //@Column()
+    //tipoDeHora: string; // Nuevo campo para el tipo calculado
+
+        // Campo para almacenar el ID del tipo de hora extra (puede ser null)
+    @Column({ nullable: true, type: 'int' })
+    tipoHoraExtraId: number | null;
 
     @ManyToOne(() => User, User => User.userHoraExtra)
     usuario: User;
      
-    @ManyToOne(() => TipoHorasExtra, tipoHorasExtra => tipoHorasExtra.horasExtra)
-    tipoHoraExtra: TipoHorasExtra;
+    //@ManyToOne(() => TipoHorasExtra, tipoHorasExtra => tipoHorasExtra.horasExtra)
+    //tipoHoraExtra: TipoHorasExtra;
+
+      @ManyToOne(() => TipoHorasExtra, tipoHorasExtra => tipoHorasExtra.horasExtra, { 
+        nullable: true,
+        onDelete: 'SET NULL' 
+    })
+    @JoinColumn({ name: 'tipoHoraExtraId' })
+    tipoHoraExtra: TipoHorasExtra | null;;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
     @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras, {
@@ -53,4 +74,10 @@ export class HorasExtra {
     })
     usuarioTurno: UsuarioTurno;
 
+    @Column({
+      type: 'enum',
+      enum: EstadoHoraExtra,
+      default: EstadoHoraExtra.PENDIENTE
+    })
+    estado: EstadoHoraExtra;
 }
