@@ -86,12 +86,15 @@ async create(createHorasExtraDto: CreateHorasExtraDto, userId: number): Promise<
     throw new BadRequestException('La duración mínima debe ser de 1 minuto');
   }
 
-  console.log('>>> [HorasExtraService.create] Análisis del rango:', {
-    inicio: horaInicioObj.toISOString(),
-    fin: horaFinCalculo.toISOString(),
-    cruzaMedianoche: cruzaMedianoche,
-    duracionMinutos: duracionMinutos
-  });
+  // ✅ NUEVA VALIDACIÓN: Verificar solapamiento con horario laboral
+  await this.validarSolapamientoConTurno(
+    horaInicioObj,
+    horaFinCalculo,
+    fechaBase,
+    userId
+  );
+
+  console.log('>>> [HorasExtraService.create] ✅ Validación de horario laboral pasada');
 
   // ============ OBTENER DATOS COMUNES ============
   const usuario = await this.userRepository.findOne({ where: { id: userId } });
@@ -652,13 +655,7 @@ private obtenerFechaSiguiente(fechaString: string): string {
     const horaExtra = await this.findOne(id);
     await this.horasExtraRepository.remove(horaExtra);
   }
-
-
-  // Agregar este método en horas-extras.service.ts
-
-
 /**
- * ✅ MÉTODO ACTUALIZADO: Update que maneja días cruzados
  */
 /**
  * ✅ NUEVO MÉTODO: Actualización individual de hora extra
@@ -689,11 +686,26 @@ async updateIndividual(id: number, updateHorasExtraDto: UpdateHorasExtraDto): Pr
     horaFinObj.setDate(horaFinObj.getDate() + 1);
   }
 
+    // 6. Validar duración mínima
+  const duracionMs = horaFinObj.getTime() - horaInicioObj.getTime();
+  if (duracionMs < 60000) { // Menos de 1 minuto
+    throw new BadRequestException('La duración mínima debe ser de 1 minuto');
+  }
+
+  // 7. ✅ NUEVA VALIDACIÓN: Verificar solapamiento con horario laboral
+  await this.validarSolapamientoConTurno(
+    horaInicioObj,
+    horaFinObj,
+    fechaBase,
+    horaExtraExistente.usuarioE
+  );
+
   console.log('>>> Análisis de horarios:', {
     cruzaMedianoche,
     inicio: horaInicioObj.toISOString(),
     fin: horaFinObj.toISOString()
   });
+
 
   // 5. Si cruza medianoche, dividir en dos registros
   if (cruzaMedianoche) {
@@ -838,64 +850,6 @@ private validarHorariosIndividual(horaInicio: string, horaFin: string, fecha: Da
 /**
  * ✅ NUEVO MÉTODO: Encontrar registros relacionados incluyendo días cruzados
  */
-private async encontrarRegistrosDelGrupoConDiasCruzados(registroBase: HorasExtra): Promise<HorasExtra[]> {
-  console.log('>>> [encontrarRegistrosDelGrupoConDiasCruzados] Buscando grupo para:', {
-    id: registroBase.idHoraExtra,
-    fecha: registroBase.fecha,
-    ticket: registroBase.ticket,
-    usuario: registroBase.usuarioE
-  });
-
-  // Buscar registros que fueron creados en la misma "sesión"
-  const margenTiempo = 10 * 60 * 1000; // 10 minutos de margen (aumentado para días cruzados)
-  const fechaCreacionBase = registroBase.fechaCreacion;
-  const fechaMinima = new Date(fechaCreacionBase.getTime() - margenTiempo);
-  const fechaMaxima = new Date(fechaCreacionBase.getTime() + margenTiempo);
-
-  // ✅ NUEVA LÓGICA: Buscar también en el día siguiente
-  const fechaBaseDate = typeof registroBase.fecha === 'string' 
-    ? new Date(registroBase.fecha + 'T12:00:00')
-    : new Date(registroBase.fecha);
-  
-  const fechaSiguiente = new Date(fechaBaseDate);
-  fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
-  const fechaSiguienteString = this.procesarFecha(fechaSiguiente);
-
-  console.log('>>> Buscando en fechas:', {
-    fechaOriginal: this.procesarFecha(registroBase.fecha),
-    fechaSiguiente: fechaSiguienteString
-  });
-
-  // Buscar en ambas fechas
-  const registrosEncontrados = await this.horasExtraRepository.find({
-    where: [
-      // Registros en la fecha original
-      {
-        usuarioE: registroBase.usuarioE,
-        fecha: registroBase.fecha,
-        ...(registroBase.ticket ? { ticket: registroBase.ticket } : { ticket: IsNull() }),
-        fechaCreacion: Between(fechaMinima, fechaMaxima)
-      },
-      // ✅ Registros en la fecha siguiente (para días cruzados)
-      {
-        usuarioE: registroBase.usuarioE,
-        fecha: fechaSiguienteString as any,
-        ...(registroBase.ticket ? { ticket: registroBase.ticket } : { ticket: IsNull() }),
-        fechaCreacion: Between(fechaMinima, fechaMaxima)
-      }
-    ],
-    relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno']
-  });
-
-  console.log('>>> Registros del grupo encontrados:', {
-    total: registrosEncontrados.length,
-    ids: registrosEncontrados.map(r => ({ id: r.idHoraExtra, fecha: r.fecha }))
-  });
-
-  return registrosEncontrados;
-}
-
-
 
 async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Promise<HorasExtra> {
  
@@ -923,4 +877,91 @@ async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Pr
     const horaExtraActualizada = await this.horasExtraRepository.save(horaExtra);
     return horaExtraActualizada;
   }
+
+  private async validarSolapamientoConTurno(
+  horaInicio: Date,
+  horaFin: Date,
+  fechaRegistro: Date,
+  userId: number
+): Promise<void> {
+  console.log('>>> [validarSolapamientoConTurno] Iniciando validación:', {
+    usuario: userId,
+    fecha: fechaRegistro.toISOString().split('T')[0],
+    horaInicio: horaInicio.toLocaleTimeString(),
+    horaFin: horaFin.toLocaleTimeString()
+  });
+
+  // 1. Buscar el turno asignado para esta fecha
+  const { usuarioTurnoEntity } = await this.buscarUsuarioTurnoPorFecha(userId, fechaRegistro);
+  
+  if (!usuarioTurnoEntity || !usuarioTurnoEntity.turno) {
+    console.log('>>> [validarSolapamientoConTurno] No hay turno asignado - Permitiendo registro');
+    return; // Si no hay turno asignado, permitir el registro
+  }
+
+  const turno = usuarioTurnoEntity.turno;
+  console.log('>>> [validarSolapamientoConTurno] Turno encontrado:', {
+    turnoId: turno.idTurno,
+    nombre: turno.nombre,
+    horaInicio: turno.horaInicio,
+    horaFin: turno.horaFin
+  });
+
+  // 2. Crear objetos Date para el horario del turno en la misma fecha base
+  const fechaBase = new Date(horaInicio);
+  fechaBase.setHours(0, 0, 0, 0);
+  
+  const horaInicioStr = typeof turno.horaInicio === 'string' ? turno.horaInicio : turno.horaInicio.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
+  const horaFinStr = typeof turno.horaFin === 'string' ? turno.horaFin : turno.horaFin.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
+  
+  const turnoInicio = this.crearFechaConHora(fechaBase, horaInicioStr);
+  let turnoFin = this.crearFechaConHora(fechaBase, horaFinStr);
+  
+  // 3. Verificar si el turno cruza medianoche
+  const turnoCruzaMedianoche = turnoFin.getTime() <= turnoInicio.getTime();
+  if (turnoCruzaMedianoche) {
+    turnoFin.setDate(turnoFin.getDate() + 1);
+  }
+
+  console.log('>>> [validarSolapamientoConTurno] Horario del turno:', {
+    inicio: turnoInicio.toISOString(),
+    fin: turnoFin.toISOString(),
+    cruzaMedianoche: turnoCruzaMedianoche
+  });
+
+  // 4. Verificar solapamiento
+  const haySolapamiento = this.verificarSolapamientoHorarios(
+    horaInicio, horaFin,
+    turnoInicio, turnoFin
+  );
+
+  if (haySolapamiento) {
+    const mensajeError = `No puedes registrar una hora extra en tu horario laboral. `;// +
+     // `Tu turno es de ${turno.horaInicio} a ${turno.horaFin}`;
+
+    console.log('>>> [validarSolapamientoConTurno] ❌ SOLAPAMIENTO DETECTADO:', mensajeError);
+    throw new BadRequestException(mensajeError);
+  }
+
+  console.log('>>> [validarSolapamientoConTurno] ✅ No hay solapamiento - Registro permitido');
+}
+
+private verificarSolapamientoHorarios(
+  inicio1: Date, fin1: Date,
+  inicio2: Date, fin2: Date
+): boolean {
+  // Dos rangos se solapan si:
+  // - El inicio del rango 1 está antes del fin del rango 2 Y
+  // - El fin del rango 1 está después del inicio del rango 2
+  const solapan = inicio1 < fin2 && fin1 > inicio2;
+  
+  console.log('>>> [verificarSolapamientoHorarios] Verificación de solapamiento:', {
+    rango1: `${inicio1.toLocaleTimeString()} - ${fin1.toLocaleTimeString()}`,
+    rango2: `${inicio2.toLocaleTimeString()} - ${fin2.toLocaleTimeString()}`,
+    solapan: solapan
+  });
+  
+  return solapan;
+}
+
 }
