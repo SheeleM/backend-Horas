@@ -70,9 +70,16 @@ cantidadHoras: number | null;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
     @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras, {
-        onDelete: 'CASCADE' // Agregar esta línea
+        onDelete: 'CASCADE',
+        eager: true // Agregar eager loading
     })
+    @JoinColumn({ name: 'turno' }) // Especificar la columna de unión
     usuarioTurno: UsuarioTurno;
+
+    // Agregar relación directa con Turno
+    @ManyToOne(() => Turno, { eager: true })
+    @JoinColumn({ name: 'turnoFK' })
+    turnoObj: Turno;
 
     @Column({
       type: 'enum',
