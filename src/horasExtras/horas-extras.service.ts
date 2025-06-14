@@ -10,6 +10,8 @@ import { TipoHorasExtra } from '../tipo-horas-extras/entities/tipo-horas-extra.e
 import { UsuarioTurno } from '../usuario-turno/entities/usuario-turno.entity';
 import { Turno } from '../turno/entities/turno.entity';
 import { FiltrosHorasExtraDto } from './dto/FiltrosHorasExtraDto';
+import { JwtAuthGuard } from 'src/login/JwtAuthGuard';
+import { JwtStrategy } from 'src/login/JwtStrategy';
 
 interface SegmentoHora {
   horaInicio: Date;
@@ -231,12 +233,15 @@ private async procesarDiaCompleto(
     horasExtra.fechaActualizacion = new Date();
     horasExtra.usuarioE = userId;
     
-    // Asignación del usuario turno
-    horasExtra.turno = usuarioTurnoId;
-    if (usuarioTurnoEntity) {
-      horasExtra.usuarioTurno = usuarioTurnoEntity;
-    }
-    
+
+if (usuarioTurnoEntity && usuarioTurnoId) {
+  horasExtra.turno = usuarioTurnoId;
+  horasExtra.usuarioTurno = usuarioTurnoEntity;
+} else {
+  horasExtra.turno = null;
+  horasExtra.usuarioTurno = null;
+}
+
     horasExtra.usuario = usuario;
     
     // Asignar tipo de hora extra
@@ -250,6 +255,7 @@ private async procesarDiaCompleto(
       horasExtra.cantidadHoras = 0;
     }
 
+
     console.log('>>> [procesarDiaCompleto] Creando registro:', {
       fecha: fechaString,
       tipo: segmento.tipoHoraExtra?.descripcion || 'SIN TIPO ASIGNADO',
@@ -260,7 +266,14 @@ private async procesarDiaCompleto(
       usuarioTurnoId: usuarioTurnoId
     });
 
-    const horaExtraGuardada = await this.horasExtraRepository.save(horasExtra);
+    // Crear objeto limpio para guardar
+    const horaExtraToSave = {
+      ...horasExtra,
+      turno: horasExtra.turno || null,
+      usuarioTurno: horasExtra.usuarioTurno || null
+    };
+
+    const horaExtraGuardada = await this.horasExtraRepository.save(horaExtraToSave);
     horasExtrasCreadas.push(horaExtraGuardada);
   }
 
@@ -284,26 +297,20 @@ private obtenerFechaSiguiente(fechaString: string): string {
   /**
    * ✅ NUEVO MÉTODO: Busca el usuarioTurno activo para una fecha específica
    */
-  private async buscarUsuarioTurnoPorFecha(userId: number, fechaRegistro: Date): Promise<{usuarioTurnoEntity: UsuarioTurno | null, usuarioTurnoId: number}> {
-    console.log('>>> [buscarUsuarioTurnoPorFecha] Buscando turno para:', {
-      userId: userId,
-      fecha: fechaRegistro.toISOString().split('T')[0]
+  private async buscarUsuarioTurnoPorFecha(userId: number, fechaRegistro: Date): Promise<{usuarioTurnoEntity: UsuarioTurno | null, usuarioTurnoId: number | null}> {
+  try {
+    // Buscar todos los turnos del usuario
+    const usuariosTurnos = await this.usuarioTurnoRepository.find({
+      where: { usuarioFK: userId },
+      relations: ['userTurno', 'turno'],
+      order: { fechaInicio: 'DESC' } // Más recientes primero
     });
 
-    try {
-      // Buscar todos los turnos del usuario
-      const usuariosTurnos = await this.usuarioTurnoRepository.find({
-        where: { usuarioFK: userId },
-        relations: ['userTurno', 'turno'],
-        order: { fechaInicio: 'DESC' } // Más recientes primero
-      });
+    console.log('>>> [buscarUsuarioTurnoPorFecha] Turnos encontrados para el usuario:', usuariosTurnos.length);
 
-      console.log('>>> [buscarUsuarioTurnoPorFecha] Turnos encontrados para el usuario:', usuariosTurnos.length);
-
-      if (usuariosTurnos.length === 0) {
-        console.log('>>> [buscarUsuarioTurnoPorFecha] No se encontraron turnos para el usuario');
-        return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
-      }
+    if (usuariosTurnos.length === 0) {
+      return { usuarioTurnoEntity: null, usuarioTurnoId: null };
+    }
 
       // Buscar el turno que contenga la fecha de registro
       for (const usuarioTurno of usuariosTurnos) {
@@ -339,12 +346,12 @@ private obtenerFechaSiguiente(fechaString: string): string {
         }
       }
 
-      console.log('>>> [buscarUsuarioTurnoPorFecha] ⚠️ No se encontró turno activo para la fecha');
-      return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
+    console.log('>>> [buscarUsuarioTurnoPorFecha] ⚠️ No se encontró turno activo para la fecha');
+    return { usuarioTurnoEntity: null, usuarioTurnoId: null };
 
     } catch (error) {
       console.error('>>> [buscarUsuarioTurnoPorFecha] Error al buscar usuario turno:', error);
-      return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
+      return { usuarioTurnoEntity: null, usuarioTurnoId: null };
     }
   }
 
@@ -988,29 +995,7 @@ async findByUser(userId: number): Promise<HorasExtra[]> {
 }
 
 // Modificar el método findOne para validar permisos
-async findOne(id: number, userId?: number): Promise<HorasExtra> {
-  const whereCondition: any = { idHoraExtra: id };
-  
-  // Si se proporciona userId, validar que solo pueda ver sus propias horas
-  if (userId) {
-    whereCondition.usuarioE = userId;
-  }
 
-  const horaExtra = await this.horasExtraRepository.findOne({
-    where: whereCondition,
-    relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno', 'usuarioTurno.turno']
-  });
-  
-  if (!horaExtra) {
-    if (userId) {
-      throw new NotFoundException(`Hora extra with ID ${id} not found or you don't have permission to access it`);
-    } else {
-      throw new NotFoundException(`Hora extra with ID ${id} not found`);
-    }
-  }
-  
-  return horaExtra;
-}
 
 // ✅ Agregar este método al HorasExtraService
 
@@ -1036,56 +1021,72 @@ async remove(id: number, userId?: number): Promise<void> {
 // ✅ NUEVO MÉTODO: Buscar horas extras con filtros obligatorios
 // ✅ MÉTODO CORREGIDO: Buscar horas extras con filtros obligatorios
 async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto): Promise<HorasExtra[]> {
-  console.log('>>> [DEBUG] Iniciando búsqueda con filtros:', {
-    userId,
-    fechaDesde: filtros.fechaDesde,
-    fechaHasta: filtros.fechaHasta,
-    estados: filtros.estados || 'sin filtro de estados'
-  });
-
   try {
-    const queryBuilder = this.horasExtraRepository
-      .createQueryBuilder('horasExtra')
-      .leftJoinAndSelect('horasExtra.tipoHoraExtra', 'tipoHoraExtra')
-      .leftJoinAndSelect('horasExtra.usuario', 'usuario')
-      .leftJoinAndSelect('horasExtra.usuarioTurno', 'usuarioTurno')
-      .leftJoinAndSelect('usuarioTurno.turno', 'turno')
-      .where('horasExtra.usuarioE = :userId', { userId });
-
-    if (filtros.fechaDesde && filtros.fechaHasta) {
-      queryBuilder.andWhere('horasExtra.fecha BETWEEN :fechaDesde AND :fechaHasta', {
-        fechaDesde: filtros.fechaDesde,
-        fechaHasta: filtros.fechaHasta
-      });
-    }
-
-    if (filtros.estados && filtros.estados.length > 0) {
-      queryBuilder.andWhere('horasExtra.estado IN (:...estados)', {
-        estados: filtros.estados
-      });
-    }
-
-    return await queryBuilder.getMany();
+    return await this.horasExtraRepository.find({
+      where: {
+        usuarioE: userId,
+        ...(filtros.fechaDesde && filtros.fechaHasta && {
+          fecha: Between(filtros.fechaDesde, filtros.fechaHasta)
+        }),
+        ...(filtros.estados && filtros.estados.length > 0 && {
+          estado: In(filtros.estados as EstadoHoraExtra[])
+        })
+      },
+      relations: {
+        tipoHoraExtra: true,
+        usuario: true,
+        usuarioTurno: {
+          turno: true
+        }
+      },
+      order: {
+        fecha: 'DESC',
+        horaInicio: 'DESC'
+      }
+    });
   } catch (error) {
     console.error('Error en findByUserWithFilters:', error);
     throw error;
   }
 }
 
-// También actualizar el método findAll para incluir las mismas relaciones
-async findAll(userId?: number): Promise<HorasExtra[]> {
-  const whereCondition = userId ? { usuarioE: userId } : {};
-  
-  return this.horasExtraRepository.find({
+async findOne(id: number, userId?: number): Promise<HorasExtra> {
+  const whereCondition: any = { idHoraExtra: id };
+  if (userId) {
+    whereCondition.usuarioE = userId;
+  }
+
+  const horaExtra = await this.horasExtraRepository.findOne({
     where: whereCondition,
-    relations: [
-      'tipoHoraExtra',
-      'usuario',
-      'usuarioTurno',
-      'usuarioTurno.turno'
-    ],
-    order: { fechaCreacion: 'DESC' }
+    relations: {
+      tipoHoraExtra: true,
+      usuario: true,
+      usuarioTurno: {
+        turno: true
+      }
+    }
   });
 
+  if (!horaExtra) {
+    throw new NotFoundException(`Hora extra with ID ${id} not found`);
+  }
+
+  return horaExtra;
+}
+
+async findAll(userId?: number): Promise<HorasExtra[]> {
+  return this.horasExtraRepository.find({
+    where: userId ? { usuarioE: userId } : {},
+    relations: {
+      tipoHoraExtra: true,
+      usuario: true,
+      usuarioTurno: {
+        turno: true
+      }
+    },
+    order: {
+      fechaCreacion: 'DESC'
+    }
+  });
 }
 }
