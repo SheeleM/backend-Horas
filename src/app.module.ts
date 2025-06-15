@@ -20,7 +20,7 @@ import { JwtStrategy } from './login/JwtStrategy';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: 'root',//123456789@M
+      password: 'Root123!',//123456789@M
       database: 'horasextra',
       autoLoadEntities:true,
       synchronize: true,
