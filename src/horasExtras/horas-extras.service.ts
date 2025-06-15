@@ -643,33 +643,7 @@ private obtenerFechaSiguiente(fechaString: string): string {
     return segmentosAgrupados;
   }
 
-  /*
-  async findAll(): Promise<HorasExtra[]> {
-    return this.horasExtraRepository.find({
-      relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno'],
-      order: { fechaCreacion: 'DESC' }
-    });
-  }
-*/
-// Con este nuevo método que filtra por usuario
 
-/*
-  async findOne(id: number): Promise<HorasExtra> {
-    const horaExtra = await this.horasExtraRepository.findOne({
-      where: { idHoraExtra: id },
-      relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno', 'usuarioTurno.turno'] // Cambiado de 'Turno' a 'turno'
-    });
-    if (!horaExtra) {
-      throw new NotFoundException(`Hora extra with ID ${id} not found`);
-    }
-    return horaExtra;
-  }
-
-  async remove(id: number): Promise<void> {
-    const horaExtra = await this.findOne(id);
-    await this.horasExtraRepository.remove(horaExtra);
-  }
-    */
 /**
  */
 /**
@@ -867,31 +841,62 @@ private validarHorariosIndividual(horaInicio: string, horaFin: string, fecha: Da
  */
 
 async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Promise<HorasExtra> {
- 
-    // Validación adicional
-    if (!Object.values(EstadoHoraExtra).includes(nuevoEstado)) {
-        throw new BadRequestException(
-            `Estado inválido. Debe ser uno de: ${Object.values(EstadoHoraExtra).join(', ')}`
-        );
+  console.log('>>> [updateEstado] Iniciando actualización de estado:', { 
+    id, 
+    nuevoEstado, 
+    userId 
+  });
+
+  // 1. Buscar la hora extra directamente sin filtros adicionales primero
+  const horaExtra = await this.horasExtraRepository.findOne({
+    where: { idHoraExtra: id },
+    relations: {
+      tipoHoraExtra: true,
+      usuario: true,
+      usuarioTurno: {
+        turno: true
+      }
     }
+  });
 
-    // 1. Buscar la hora extra
-    const horaExtra = await this.findOne(id);
-    if (!horaExtra) {
-      throw new NotFoundException(`Hora extra con ID ${id} no encontrada`);
-    }
-
-    // 2. Verificar permisos si es necesario
-    // Aquí puedes agregar lógica de permisos según roles
-
-    // 3. Actualizar el estado
-    horaExtra.estado = nuevoEstado;
-    horaExtra.fechaActualizacion = new Date();
-
-    // 4. Guardar los cambios
-    const horaExtraActualizada = await this.horasExtraRepository.save(horaExtra);
-    return horaExtraActualizada;
+  if (!horaExtra) {
+    console.log(`>>> [updateEstado] No se encontró la hora extra con ID ${id}`);
+    throw new NotFoundException(`No se encontró la hora extra con ID ${id}`);
   }
+
+  console.log('>>> [updateEstado] Hora extra encontrada:', {
+    id: horaExtra.idHoraExtra,
+    estadoActual: horaExtra.estado,
+    nuevoEstado: nuevoEstado
+  });
+
+  // Validación del estado
+  if (!Object.values(EstadoHoraExtra).includes(nuevoEstado)) {
+    throw new BadRequestException(
+      `Estado inválido: ${nuevoEstado}. Debe ser uno de: ${Object.values(EstadoHoraExtra).join(', ')}`
+    );
+  }
+
+  // Actualizar el estado
+  try {
+    // Actualizar usando save para mantener los hooks y validaciones
+    const horaExtraActualizada = await this.horasExtraRepository.save({
+      ...horaExtra,
+      estado: nuevoEstado,
+      fechaActualizacion: new Date()
+    });
+
+    console.log('>>> [updateEstado] Estado actualizado exitosamente:', {
+      id: horaExtraActualizada.idHoraExtra,
+      nuevoEstado: horaExtraActualizada.estado
+    });
+
+    return horaExtraActualizada;
+  } catch (error) {
+    console.error('>>> [updateEstado] Error al actualizar el estado:', error);
+    throw new BadRequestException('Error al actualizar el estado de la hora extra');
+  }
+}
 
   private async validarSolapamientoConTurno(
   horaInicio: Date,
@@ -1006,7 +1011,7 @@ async remove(id: number, userId?: number): Promise<void> {
   const horaExtra = await this.findOne(id, userId);
   
   if (!horaExtra) {
-    throw new NotFoundException(`Hora extra with ID ${id} not found`);
+    throw new NotFoundException(`Hora extra with IDSULLLLLLLLLLLLLL ${id} not found`);
   }
   
   // Validación adicional si se proporciona userId
@@ -1020,17 +1025,60 @@ async remove(id: number, userId?: number): Promise<void> {
 
 // ✅ NUEVO MÉTODO: Buscar horas extras con filtros obligatorios
 // ✅ MÉTODO CORREGIDO: Buscar horas extras con filtros obligatorios
-async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto): Promise<HorasExtra[]> {
+async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto, userRole: string): Promise<HorasExtra[]> {
   try {
-    return await this.horasExtraRepository.find({
+    console.log('>>> [findByUserWithFilters] Iniciando búsqueda:', { 
+      userId, 
+      userRole, 
+      filtros,
+      roleToLower: userRole?.toLowerCase() 
+    });
+
+    // Validar que el usuario existe
+    const usuario = await this.userRepository.findOne({ where: { id: userId } });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Construir la consulta base con los filtros de fecha y estado
+    const baseWhere: any = {
+      ...(filtros.fechaDesde && filtros.fechaHasta && {
+        fecha: Between(filtros.fechaDesde, filtros.fechaHasta)
+      }),
+      ...(filtros.estados && filtros.estados.length > 0 && {
+        estado: In(filtros.estados as EstadoHoraExtra[])
+      })
+    };
+
+    // Convertir rol a minúsculas para comparación
+    const normalizedRole = userRole?.toLowerCase();
+    
+    // Si es administrador, no filtrar por usuario
+    if (normalizedRole === 'admin' || normalizedRole === 'administrador') {
+      console.log('>>> Usuario admin - Mostrando todas las horas extras del rango');
+      
+      return this.horasExtraRepository.find({
+        where: baseWhere,
+        relations: {
+          tipoHoraExtra: true,
+          usuario: true,
+          usuarioTurno: {
+            turno: true
+          }
+        },
+        order: {
+          fecha: 'DESC',
+          horaInicio: 'DESC'
+        }
+      });
+    }
+
+    // Para usuarios no administradores, agregar filtro por usuarioE
+    console.log('>>> Usuario regular - Mostrando solo sus horas extras');
+    return this.horasExtraRepository.find({
       where: {
-        usuarioE: userId,
-        ...(filtros.fechaDesde && filtros.fechaHasta && {
-          fecha: Between(filtros.fechaDesde, filtros.fechaHasta)
-        }),
-        ...(filtros.estados && filtros.estados.length > 0 && {
-          estado: In(filtros.estados as EstadoHoraExtra[])
-        })
+        ...baseWhere,
+        usuarioE: userId
       },
       relations: {
         tipoHoraExtra: true,
@@ -1074,19 +1122,50 @@ async findOne(id: number, userId?: number): Promise<HorasExtra> {
   return horaExtra;
 }
 
-async findAll(userId?: number): Promise<HorasExtra[]> {
-  return this.horasExtraRepository.find({
-    where: userId ? { usuarioE: userId } : {},
-    relations: {
-      tipoHoraExtra: true,
-      usuario: true,
-      usuarioTurno: {
-        turno: true
-      }
-    },
-    order: {
-      fechaCreacion: 'DESC'
+
+async findAll(userId: number, userRole?: string): Promise<HorasExtra[]> {
+    console.log('>>> [HorasExtraService.findAll] Consultando horas extras:', { userId, userRole });
+    
+    // Validar que el usuario existe
+    const usuario = await this.userRepository.findOne({ where: { id: userId } });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
     }
-  });
-}
+
+    // Si el usuario es administrador, puede ver todas las horas extras
+    if (userRole === 'ADMIN' || userRole === 'ADMINISTRADOR') {
+      console.log('>>> [HorasExtraService.findAll] Usuario administrador - Mostrando todas las horas extras');
+      
+      return this.horasExtraRepository.find({
+        relations: {
+          tipoHoraExtra: true,
+          usuario: true,
+          usuarioTurno: {
+            turno: true
+          }
+        },
+        order: {
+          fechaCreacion: 'DESC'
+        }
+      });
+    }
+
+    // Si no es administrador, solo puede ver sus propias horas extras
+    console.log('>>> [HorasExtraService.findAll] Usuario normal - Mostrando solo sus horas extras');
+    
+    return this.horasExtraRepository.find({
+      where: { usuarioE: userId },
+      relations: {
+        tipoHoraExtra: true,
+        usuario: true,
+        usuarioTurno: {
+          turno: true
+        }
+      },
+      order: {
+        fechaCreacion: 'DESC'
+      }
+    });
+  }
+
 }
