@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { EstadoHoraExtra } from './entities/horas-extra.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository, Between } from 'typeorm';
+import { IsNull, Repository, Between, In } from 'typeorm';
 import { HorasExtra } from './entities/horas-extra.entity';
 import { CreateHorasExtraDto } from './dto/create-horas-extra.dto';
 import { UpdateHorasExtraDto } from './dto/update-horas-extra.dto';
@@ -9,6 +9,9 @@ import { User } from '../user/entities/user.entity';
 import { TipoHorasExtra } from '../tipo-horas-extras/entities/tipo-horas-extra.entity';
 import { UsuarioTurno } from '../usuario-turno/entities/usuario-turno.entity';
 import { Turno } from '../turno/entities/turno.entity';
+import { FiltrosHorasExtraDto } from './dto/FiltrosHorasExtraDto';
+import { JwtAuthGuard } from 'src/login/JwtAuthGuard';
+import { JwtStrategy } from 'src/login/JwtStrategy';
 
 interface SegmentoHora {
   horaInicio: Date;
@@ -40,7 +43,7 @@ export class HorasExtraService {
     @InjectRepository(TipoHorasExtra)
     private tipoHorasExtraRepository: Repository<TipoHorasExtra>,
     @InjectRepository(Turno)
-    private turnoRepository: Repository<Turno>,
+    private turnoRepository: Repository<Turno>
   ) {}
 
 async create(createHorasExtraDto: CreateHorasExtraDto, userId: number): Promise<HorasExtra[]> {
@@ -86,14 +89,19 @@ async create(createHorasExtraDto: CreateHorasExtraDto, userId: number): Promise<
     throw new BadRequestException('La duración mínima debe ser de 1 minuto');
   }
 
-  console.log('>>> [HorasExtraService.create] Análisis del rango:', {
-    inicio: horaInicioObj.toISOString(),
-    fin: horaFinCalculo.toISOString(),
-    cruzaMedianoche: cruzaMedianoche,
-    duracionMinutos: duracionMinutos
-  });
+  // ✅ NUEVA VALIDACIÓN: Verificar solapamiento con horario laboral
+  await this.validarSolapamientoConTurno(
+    horaInicioObj,
+    horaFinCalculo,
+    fechaBase,
+    userId
+  );
+
+  console.log('>>> [HorasExtraService.create] ✅ Validación de horario laboral pasada');
 
   // ============ OBTENER DATOS COMUNES ============
+
+  
   const usuario = await this.userRepository.findOne({ where: { id: userId } });
   if (!usuario) {
     throw new BadRequestException('Usuario no encontrado');
@@ -225,12 +233,15 @@ private async procesarDiaCompleto(
     horasExtra.fechaActualizacion = new Date();
     horasExtra.usuarioE = userId;
     
-    // Asignación del usuario turno
-    horasExtra.turno = usuarioTurnoId;
-    if (usuarioTurnoEntity) {
-      horasExtra.usuarioTurno = usuarioTurnoEntity;
-    }
-    
+
+if (usuarioTurnoEntity && usuarioTurnoId) {
+  horasExtra.turno = usuarioTurnoId;
+  horasExtra.usuarioTurno = usuarioTurnoEntity;
+} else {
+  horasExtra.turno = null;
+  horasExtra.usuarioTurno = null;
+}
+
     horasExtra.usuario = usuario;
     
     // Asignar tipo de hora extra
@@ -244,6 +255,7 @@ private async procesarDiaCompleto(
       horasExtra.cantidadHoras = 0;
     }
 
+
     console.log('>>> [procesarDiaCompleto] Creando registro:', {
       fecha: fechaString,
       tipo: segmento.tipoHoraExtra?.descripcion || 'SIN TIPO ASIGNADO',
@@ -254,7 +266,14 @@ private async procesarDiaCompleto(
       usuarioTurnoId: usuarioTurnoId
     });
 
-    const horaExtraGuardada = await this.horasExtraRepository.save(horasExtra);
+    // Crear objeto limpio para guardar
+    const horaExtraToSave = {
+      ...horasExtra,
+      turno: horasExtra.turno || null,
+      usuarioTurno: horasExtra.usuarioTurno || null
+    };
+
+    const horaExtraGuardada = await this.horasExtraRepository.save(horaExtraToSave);
     horasExtrasCreadas.push(horaExtraGuardada);
   }
 
@@ -278,26 +297,20 @@ private obtenerFechaSiguiente(fechaString: string): string {
   /**
    * ✅ NUEVO MÉTODO: Busca el usuarioTurno activo para una fecha específica
    */
-  private async buscarUsuarioTurnoPorFecha(userId: number, fechaRegistro: Date): Promise<{usuarioTurnoEntity: UsuarioTurno | null, usuarioTurnoId: number}> {
-    console.log('>>> [buscarUsuarioTurnoPorFecha] Buscando turno para:', {
-      userId: userId,
-      fecha: fechaRegistro.toISOString().split('T')[0]
+  private async buscarUsuarioTurnoPorFecha(userId: number, fechaRegistro: Date): Promise<{usuarioTurnoEntity: UsuarioTurno | null, usuarioTurnoId: number | null}> {
+  try {
+    // Buscar todos los turnos del usuario
+    const usuariosTurnos = await this.usuarioTurnoRepository.find({
+      where: { usuarioFK: userId },
+      relations: ['userTurno', 'turno'],
+      order: { fechaInicio: 'DESC' } // Más recientes primero
     });
 
-    try {
-      // Buscar todos los turnos del usuario
-      const usuariosTurnos = await this.usuarioTurnoRepository.find({
-        where: { usuarioFK: userId },
-        relations: ['userTurno', 'turno'],
-        order: { fechaInicio: 'DESC' } // Más recientes primero
-      });
+    console.log('>>> [buscarUsuarioTurnoPorFecha] Turnos encontrados para el usuario:', usuariosTurnos.length);
 
-      console.log('>>> [buscarUsuarioTurnoPorFecha] Turnos encontrados para el usuario:', usuariosTurnos.length);
-
-      if (usuariosTurnos.length === 0) {
-        console.log('>>> [buscarUsuarioTurnoPorFecha] No se encontraron turnos para el usuario');
-        return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
-      }
+    if (usuariosTurnos.length === 0) {
+      return { usuarioTurnoEntity: null, usuarioTurnoId: null };
+    }
 
       // Buscar el turno que contenga la fecha de registro
       for (const usuarioTurno of usuariosTurnos) {
@@ -333,12 +346,12 @@ private obtenerFechaSiguiente(fechaString: string): string {
         }
       }
 
-      console.log('>>> [buscarUsuarioTurnoPorFecha] ⚠️ No se encontró turno activo para la fecha');
-      return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
+    console.log('>>> [buscarUsuarioTurnoPorFecha] ⚠️ No se encontró turno activo para la fecha');
+    return { usuarioTurnoEntity: null, usuarioTurnoId: null };
 
     } catch (error) {
       console.error('>>> [buscarUsuarioTurnoPorFecha] Error al buscar usuario turno:', error);
-      return { usuarioTurnoEntity: null, usuarioTurnoId: 0 };
+      return { usuarioTurnoEntity: null, usuarioTurnoId: null };
     }
   }
 
@@ -630,35 +643,8 @@ private obtenerFechaSiguiente(fechaString: string): string {
     return segmentosAgrupados;
   }
 
-  async findAll(): Promise<HorasExtra[]> {
-    return this.horasExtraRepository.find({
-      relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno'],
-      order: { fechaCreacion: 'DESC' }
-    });
-  }
-
-  async findOne(id: number): Promise<HorasExtra> {
-    const horaExtra = await this.horasExtraRepository.findOne({
-      where: { idHoraExtra: id },
-      relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno', 'usuarioTurno.turno'] // Cambiado de 'Turno' a 'turno'
-    });
-    if (!horaExtra) {
-      throw new NotFoundException(`Hora extra with ID ${id} not found`);
-    }
-    return horaExtra;
-  }
-
-  async remove(id: number): Promise<void> {
-    const horaExtra = await this.findOne(id);
-    await this.horasExtraRepository.remove(horaExtra);
-  }
-
-
-  // Agregar este método en horas-extras.service.ts
-
 
 /**
- * ✅ MÉTODO ACTUALIZADO: Update que maneja días cruzados
  */
 /**
  * ✅ NUEVO MÉTODO: Actualización individual de hora extra
@@ -689,11 +675,26 @@ async updateIndividual(id: number, updateHorasExtraDto: UpdateHorasExtraDto): Pr
     horaFinObj.setDate(horaFinObj.getDate() + 1);
   }
 
+    // 6. Validar duración mínima
+  const duracionMs = horaFinObj.getTime() - horaInicioObj.getTime();
+  if (duracionMs < 60000) { // Menos de 1 minuto
+    throw new BadRequestException('La duración mínima debe ser de 1 minuto');
+  }
+
+  // 7. ✅ NUEVA VALIDACIÓN: Verificar solapamiento con horario laboral
+  await this.validarSolapamientoConTurno(
+    horaInicioObj,
+    horaFinObj,
+    fechaBase,
+    horaExtraExistente.usuarioE
+  );
+
   console.log('>>> Análisis de horarios:', {
     cruzaMedianoche,
     inicio: horaInicioObj.toISOString(),
     fin: horaFinObj.toISOString()
   });
+
 
   // 5. Si cruza medianoche, dividir en dos registros
   if (cruzaMedianoche) {
@@ -838,89 +839,333 @@ private validarHorariosIndividual(horaInicio: string, horaFin: string, fecha: Da
 /**
  * ✅ NUEVO MÉTODO: Encontrar registros relacionados incluyendo días cruzados
  */
-private async encontrarRegistrosDelGrupoConDiasCruzados(registroBase: HorasExtra): Promise<HorasExtra[]> {
-  console.log('>>> [encontrarRegistrosDelGrupoConDiasCruzados] Buscando grupo para:', {
-    id: registroBase.idHoraExtra,
-    fecha: registroBase.fecha,
-    ticket: registroBase.ticket,
-    usuario: registroBase.usuarioE
+
+async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Promise<HorasExtra> {
+  console.log('>>> [updateEstado] Iniciando actualización de estado:', { 
+    id, 
+    nuevoEstado, 
+    userId 
   });
 
-  // Buscar registros que fueron creados en la misma "sesión"
-  const margenTiempo = 10 * 60 * 1000; // 10 minutos de margen (aumentado para días cruzados)
-  const fechaCreacionBase = registroBase.fechaCreacion;
-  const fechaMinima = new Date(fechaCreacionBase.getTime() - margenTiempo);
-  const fechaMaxima = new Date(fechaCreacionBase.getTime() + margenTiempo);
-
-  // ✅ NUEVA LÓGICA: Buscar también en el día siguiente
-  const fechaBaseDate = typeof registroBase.fecha === 'string' 
-    ? new Date(registroBase.fecha + 'T12:00:00')
-    : new Date(registroBase.fecha);
-  
-  const fechaSiguiente = new Date(fechaBaseDate);
-  fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
-  const fechaSiguienteString = this.procesarFecha(fechaSiguiente);
-
-  console.log('>>> Buscando en fechas:', {
-    fechaOriginal: this.procesarFecha(registroBase.fecha),
-    fechaSiguiente: fechaSiguienteString
-  });
-
-  // Buscar en ambas fechas
-  const registrosEncontrados = await this.horasExtraRepository.find({
-    where: [
-      // Registros en la fecha original
-      {
-        usuarioE: registroBase.usuarioE,
-        fecha: registroBase.fecha,
-        ...(registroBase.ticket ? { ticket: registroBase.ticket } : { ticket: IsNull() }),
-        fechaCreacion: Between(fechaMinima, fechaMaxima)
-      },
-      // ✅ Registros en la fecha siguiente (para días cruzados)
-      {
-        usuarioE: registroBase.usuarioE,
-        fecha: fechaSiguienteString as any,
-        ...(registroBase.ticket ? { ticket: registroBase.ticket } : { ticket: IsNull() }),
-        fechaCreacion: Between(fechaMinima, fechaMaxima)
+  // 1. Buscar la hora extra directamente sin filtros adicionales primero
+  const horaExtra = await this.horasExtraRepository.findOne({
+    where: { idHoraExtra: id },
+    relations: {
+      tipoHoraExtra: true,
+      usuario: true,
+      usuarioTurno: {
+        turno: true
       }
-    ],
-    relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno']
+    }
   });
 
-  console.log('>>> Registros del grupo encontrados:', {
-    total: registrosEncontrados.length,
-    ids: registrosEncontrados.map(r => ({ id: r.idHoraExtra, fecha: r.fecha }))
+  if (!horaExtra) {
+    console.log(`>>> [updateEstado] No se encontró la hora extra con ID ${id}`);
+    throw new NotFoundException(`No se encontró la hora extra con ID ${id}`);
+  }
+
+  console.log('>>> [updateEstado] Hora extra encontrada:', {
+    id: horaExtra.idHoraExtra,
+    estadoActual: horaExtra.estado,
+    nuevoEstado: nuevoEstado
   });
 
-  return registrosEncontrados;
+  // Validación del estado
+  if (!Object.values(EstadoHoraExtra).includes(nuevoEstado)) {
+    throw new BadRequestException(
+      `Estado inválido: ${nuevoEstado}. Debe ser uno de: ${Object.values(EstadoHoraExtra).join(', ')}`
+    );
+  }
+
+  // Actualizar el estado
+  try {
+    // Actualizar usando save para mantener los hooks y validaciones
+    const horaExtraActualizada = await this.horasExtraRepository.save({
+      ...horaExtra,
+      estado: nuevoEstado,
+      fechaActualizacion: new Date()
+    });
+
+    console.log('>>> [updateEstado] Estado actualizado exitosamente:', {
+      id: horaExtraActualizada.idHoraExtra,
+      nuevoEstado: horaExtraActualizada.estado
+    });
+
+    return horaExtraActualizada;
+  } catch (error) {
+    console.error('>>> [updateEstado] Error al actualizar el estado:', error);
+    throw new BadRequestException('Error al actualizar el estado de la hora extra');
+  }
+}
+
+  private async validarSolapamientoConTurno(
+  horaInicio: Date,
+  horaFin: Date,
+  fechaRegistro: Date,
+  userId: number
+): Promise<void> {
+  console.log('>>> [validarSolapamientoConTurno] Iniciando validación:', {
+    usuario: userId,
+    fecha: fechaRegistro.toISOString().split('T')[0],
+    horaInicio: horaInicio.toLocaleTimeString(),
+    horaFin: horaFin.toLocaleTimeString()
+  });
+
+  // 1. Buscar el turno asignado para esta fecha
+  const { usuarioTurnoEntity } = await this.buscarUsuarioTurnoPorFecha(userId, fechaRegistro);
+  
+  if (!usuarioTurnoEntity || !usuarioTurnoEntity.turno) {
+    console.log('>>> [validarSolapamientoConTurno] No hay turno asignado - Permitiendo registro');
+    return; // Si no hay turno asignado, permitir el registro
+  }
+
+  const turno = usuarioTurnoEntity.turno;
+  console.log('>>> [validarSolapamientoConTurno] Turno encontrado:', {
+    turnoId: turno.idTurno,
+    nombre: turno.nombre,
+    horaInicio: turno.horaInicio,
+    horaFin: turno.horaFin
+  });
+
+  // 2. Crear objetos Date para el horario del turno en la misma fecha base
+  const fechaBase = new Date(horaInicio);
+  fechaBase.setHours(0, 0, 0, 0);
+  
+  const horaInicioStr = typeof turno.horaInicio === 'string' ? turno.horaInicio : turno.horaInicio.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
+  const horaFinStr = typeof turno.horaFin === 'string' ? turno.horaFin : turno.horaFin.toLocaleTimeString('en-US', { hour12: false }).substring(0, 5);
+  
+  const turnoInicio = this.crearFechaConHora(fechaBase, horaInicioStr);
+  let turnoFin = this.crearFechaConHora(fechaBase, horaFinStr);
+  
+  // 3. Verificar si el turno cruza medianoche
+  const turnoCruzaMedianoche = turnoFin.getTime() <= turnoInicio.getTime();
+  if (turnoCruzaMedianoche) {
+    turnoFin.setDate(turnoFin.getDate() + 1);
+  }
+
+  console.log('>>> [validarSolapamientoConTurno] Horario del turno:', {
+    inicio: turnoInicio.toISOString(),
+    fin: turnoFin.toISOString(),
+    cruzaMedianoche: turnoCruzaMedianoche
+  });
+
+  // 4. Verificar solapamiento
+  const haySolapamiento = this.verificarSolapamientoHorarios(
+    horaInicio, horaFin,
+    turnoInicio, turnoFin
+  );
+
+  if (haySolapamiento) {
+    const mensajeError = `No puedes registrar una hora extra en tu horario laboral. `;// +
+     // `Tu turno es de ${turno.horaInicio} a ${turno.horaFin}`;
+
+    console.log('>>> [validarSolapamientoConTurno] ❌ SOLAPAMIENTO DETECTADO:', mensajeError);
+    throw new BadRequestException(mensajeError);
+  }
+
+  console.log('>>> [validarSolapamientoConTurno] ✅ No hay solapamiento - Registro permitido');
+}
+
+private verificarSolapamientoHorarios(
+  inicio1: Date, fin1: Date,
+  inicio2: Date, fin2: Date
+): boolean {
+  // Dos rangos se solapan si:
+  // - El inicio del rango 1 está antes del fin del rango 2 Y
+  // - El fin del rango 1 está después del inicio del rango 2
+  const solapan = inicio1 < fin2 && fin1 > inicio2;
+  
+  console.log('>>> [verificarSolapamientoHorarios] Verificación de solapamiento:', {
+    rango1: `${inicio1.toLocaleTimeString()} - ${fin1.toLocaleTimeString()}`,
+    rango2: `${inicio2.toLocaleTimeString()} - ${fin2.toLocaleTimeString()}`,
+    solapan: solapan
+  });
+  
+  return solapan;
+}
+
+  // Obtener solo las horas extras del usuario autenticado
+ 
+  // Obtener solo las horas extras del usuario autenticado
+
+// Agregar método específico para obtener solo las horas del usuario autenticado
+async findByUser(userId: number): Promise<HorasExtra[]> {
+  console.log('>>> [HorasExtraService.findByUser] Buscando horas extras para usuario:', userId);
+  
+  return this.horasExtraRepository.find({
+    where: { usuarioE: userId },
+    relations: ['tipoHoraExtra', 'usuario', 'usuarioTurno'],
+    order: { fechaCreacion: 'DESC' }
+  });
+}
+
+// Modificar el método findOne para validar permisos
+
+
+// ✅ Agregar este método al HorasExtraService
+
+async remove(id: number, userId?: number): Promise<void> {
+  console.log('>>> [HorasExtraService.remove] Eliminando hora extra:', { id, userId });
+  
+  // Si se proporciona userId, validar que solo pueda eliminar sus propias horas
+  const horaExtra = await this.findOne(id, userId);
+  
+  if (!horaExtra) {
+    throw new NotFoundException(`Hora extra with IDSULLLLLLLLLLLLLL ${id} not found`);
+  }
+  
+  // Validación adicional si se proporciona userId
+  if (userId && horaExtra.usuarioE !== userId) {
+    throw new ForbiddenException('No tienes permisos para eliminar esta hora extra');
+  }
+  
+  await this.horasExtraRepository.remove(horaExtra);
+  console.log('>>> [HorasExtraService.remove] Hora extra eliminada exitosamente');
+}
+
+// ✅ NUEVO MÉTODO: Buscar horas extras con filtros obligatorios
+// ✅ MÉTODO CORREGIDO: Buscar horas extras con filtros obligatorios
+async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto, userRole: string): Promise<HorasExtra[]> {
+  try {
+    console.log('>>> [findByUserWithFilters] Iniciando búsqueda:', { 
+      userId, 
+      userRole, 
+      filtros,
+      roleToLower: userRole?.toLowerCase() 
+    });
+
+    // Validar que el usuario existe
+    const usuario = await this.userRepository.findOne({ where: { id: userId } });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Construir la consulta base con los filtros de fecha y estado
+    const baseWhere: any = {
+      ...(filtros.fechaDesde && filtros.fechaHasta && {
+        fecha: Between(filtros.fechaDesde, filtros.fechaHasta)
+      }),
+      ...(filtros.estados && filtros.estados.length > 0 && {
+        estado: In(filtros.estados as EstadoHoraExtra[])
+      })
+    };
+
+    // Convertir rol a minúsculas para comparación
+    const normalizedRole = userRole?.toLowerCase();
+    
+    // Si es administrador, no filtrar por usuario
+    if (normalizedRole === 'admin' || normalizedRole === 'administrador') {
+      console.log('>>> Usuario admin - Mostrando todas las horas extras del rango');
+      
+      return this.horasExtraRepository.find({
+        where: baseWhere,
+        relations: {
+          tipoHoraExtra: true,
+          usuario: true,
+          usuarioTurno: {
+            turno: true
+          }
+        },
+        order: {
+          fecha: 'DESC',
+          horaInicio: 'DESC'
+        }
+      });
+    }
+
+    // Para usuarios no administradores, agregar filtro por usuarioE
+    console.log('>>> Usuario regular - Mostrando solo sus horas extras');
+    return this.horasExtraRepository.find({
+      where: {
+        ...baseWhere,
+        usuarioE: userId
+      },
+      relations: {
+        tipoHoraExtra: true,
+        usuario: true,
+        usuarioTurno: {
+          turno: true
+        }
+      },
+      order: {
+        fecha: 'DESC',
+        horaInicio: 'DESC'
+      }
+    });
+  } catch (error) {
+    console.error('Error en findByUserWithFilters:', error);
+    throw error;
+  }
+}
+
+async findOne(id: number, userId?: number): Promise<HorasExtra> {
+  const whereCondition: any = { idHoraExtra: id };
+  if (userId) {
+    whereCondition.usuarioE = userId;
+  }
+
+  const horaExtra = await this.horasExtraRepository.findOne({
+    where: whereCondition,
+    relations: {
+      tipoHoraExtra: true,
+      usuario: true,
+      usuarioTurno: {
+        turno: true
+      }
+    }
+  });
+
+  if (!horaExtra) {
+    throw new NotFoundException(`Hora extra with ID ${id} not found`);
+  }
+
+  return horaExtra;
 }
 
 
-
-async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Promise<HorasExtra> {
- 
-    // Validación adicional
-    if (!Object.values(EstadoHoraExtra).includes(nuevoEstado)) {
-        throw new BadRequestException(
-            `Estado inválido. Debe ser uno de: ${Object.values(EstadoHoraExtra).join(', ')}`
-        );
+async findAll(userId: number, userRole?: string): Promise<HorasExtra[]> {
+    console.log('>>> [HorasExtraService.findAll] Consultando horas extras:', { userId, userRole });
+    
+    // Validar que el usuario existe
+    const usuario = await this.userRepository.findOne({ where: { id: userId } });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
     }
 
-    // 1. Buscar la hora extra
-    const horaExtra = await this.findOne(id);
-    if (!horaExtra) {
-      throw new NotFoundException(`Hora extra con ID ${id} no encontrada`);
+    // Si el usuario es administrador, puede ver todas las horas extras
+    if (userRole === 'ADMIN' || userRole === 'ADMINISTRADOR') {
+      console.log('>>> [HorasExtraService.findAll] Usuario administrador - Mostrando todas las horas extras');
+      
+      return this.horasExtraRepository.find({
+        relations: {
+          tipoHoraExtra: true,
+          usuario: true,
+          usuarioTurno: {
+            turno: true
+          }
+        },
+        order: {
+          fechaCreacion: 'DESC'
+        }
+      });
     }
 
-    // 2. Verificar permisos si es necesario
-    // Aquí puedes agregar lógica de permisos según roles
-
-    // 3. Actualizar el estado
-    horaExtra.estado = nuevoEstado;
-    horaExtra.fechaActualizacion = new Date();
-
-    // 4. Guardar los cambios
-    const horaExtraActualizada = await this.horasExtraRepository.save(horaExtra);
-    return horaExtraActualizada;
+    // Si no es administrador, solo puede ver sus propias horas extras
+    console.log('>>> [HorasExtraService.findAll] Usuario normal - Mostrando solo sus horas extras');
+    
+    return this.horasExtraRepository.find({
+      where: { usuarioE: userId },
+      relations: {
+        tipoHoraExtra: true,
+        usuario: true,
+        usuarioTurno: {
+          turno: true
+        }
+      },
+      order: {
+        fechaCreacion: 'DESC'
+      }
+    });
   }
+
 }

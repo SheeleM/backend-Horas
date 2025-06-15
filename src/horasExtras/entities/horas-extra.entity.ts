@@ -35,8 +35,8 @@ export class HorasExtra {
     @Column()
     usuarioE: number;
 
-    @Column()
-    turno: number;
+    @Column({ nullable: true })
+    turno: number | null;
 
     @Column({type:'timestamp'})
     fechaCreacion: Date;
@@ -69,10 +69,9 @@ cantidadHoras: number | null;
     tipoHoraExtra: TipoHorasExtra | null;;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
-    @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras, {
-        onDelete: 'CASCADE' // Agregar esta línea
-    })
-    usuarioTurno: UsuarioTurno;
+    @ManyToOne(() => UsuarioTurno, { nullable: true })
+    @JoinColumn({ name: 'turno' })
+    usuarioTurno: UsuarioTurno | null;
 
     @Column({
       type: 'enum',

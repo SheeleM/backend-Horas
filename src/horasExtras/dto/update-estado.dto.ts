@@ -3,7 +3,7 @@ import { EstadoHoraExtra } from '../entities/horas-extra.entity';
 
 export class UpdateEstadoDto {
     @IsEnum(EstadoHoraExtra, {
-        message: 'El estado debe ser: PENDIENTE, APROBADA, RECHAZADA o EN_REVISION'
+        message: `Estado debe ser uno de los siguientes valores: ${Object.values(EstadoHoraExtra).join(', ')}`
     })
     estado: EstadoHoraExtra;
 }
