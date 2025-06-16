@@ -35,10 +35,11 @@ async function bootstrap() {
  // origin:  'https://vrbstm5m-4200.use2.devtunnels.ms', // HTTPS
   //   'http://vrbstm5m-4200.use2.devtunnels.ms'  // HTTP por si acaso
   origin: [
+    '*'
  //   'https://vrbstm5m-4200.use2.devtunnels.ms', // HTTPS
   //  'http://vrbstm5m-4200.use2.devtunnels.ms',  // HTTP por si acaso
-    'http://localhost:4200',
-     'http://20.57.139.111:3000' // Para desarrollo local
+   // 'http://localhost:4200',
+    // 'http://20.57.139.111:3000' // Para desarrollo local
   ],
 
  // origin: 'https://front-horas-two.vercel.app', // Permitir solicitudes solo desde Angular
