@@ -18,7 +18,7 @@ export class UsuarioTurnoService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {
-    console.log('>>> Repositorio inyectado correctamente');
+
   }
 
   // Mapa para convertir nombres de días a números (0 = domingo, 1 = lunes, etc.)

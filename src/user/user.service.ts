@@ -95,7 +95,6 @@ export class UserService {
       const inputRespuesta = String(respuestaSeguridad).trim().toLowerCase();
 
       if (userRespuesta !== inputRespuesta) {
-        console.log('Las respuestas NO coinciden - debería fallar');
         return { success: false, message: 'Respuesta de seguridad incorrecta' };
       }
 

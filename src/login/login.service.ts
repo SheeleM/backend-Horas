@@ -18,15 +18,14 @@ export class LoginService {
     const cedulaNum = Number(cedula);
 
     const user = await this.userRepository.findOne({
-      where: { cedula: cedulaNum, estado: true }, // estado: true }, // Añadido estado: true para verificar usuarios activos
+      where: { cedula: cedulaNum, estado: true },
       relations: ['rol'],
     });
 
-   // console.log('¿Usuario existe?', user ? 'Sí' : 'No');
-    //console.log('¿activo?', user?.estado ? 'activo' : 'inactivo');
+
 
     if (!user) {
-      console.log('Usuario no encontrado o inactivo');
+
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 

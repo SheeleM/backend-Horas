@@ -28,7 +28,6 @@ export class GetUsuarioAsignacionDto {
                    `Turno ID: ${entity.turnoFK}` ||
                    'Unknown';
     // For debugging
-    console.log("User relation:", entity.userTurno);
-    console.log("User FK:", entity.usuarioFK);
+
   }
 }

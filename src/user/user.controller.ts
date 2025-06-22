@@ -97,7 +97,6 @@ export class UserController {
 
   @Post('fullname')
   findOnlyNames(): Promise<any[]> {
-    console.log("NUEVOOOO METODO USUARIOS");
     return this.userService.findOnlyNames();
   }
 }

@@ -1,4 +1,4 @@
-import { IsDecimal, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
+import { IsBoolean, IsDecimal, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
 import { EstadoHoraExtra } from "../entities/horas-extra.entity";
 
 export class CreateHorasExtraDto {
@@ -26,5 +26,12 @@ export class CreateHorasExtraDto {
 
     estado?: EstadoHoraExtra;
 
+    @IsOptional()
+    @IsBoolean()
+    esFestivo?: boolean;
+
+        @IsOptional()
+    @IsBoolean()
+    esDomingo?: boolean;
 
 }

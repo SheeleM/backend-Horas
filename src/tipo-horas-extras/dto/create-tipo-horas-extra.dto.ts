@@ -1,4 +1,5 @@
 import {
+  IsBoolean,  // Añadir este import
   IsDecimal,
   IsInt,
   IsNotEmpty,
@@ -51,6 +52,13 @@ export class CreateTipoHorasExtraDto {
   })
   horaFin2 ?:string;
 
+    @IsOptional()
+@IsBoolean({ message: 'esFestivo debe ser booleano' })
+  esFestivo?: boolean;
+
+    @IsOptional()
+@IsBoolean({ message: 'esDomingo debe ser booleano' })
+  esDomingo?: boolean;
 
 
 }

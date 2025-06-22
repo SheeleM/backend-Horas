@@ -18,7 +18,7 @@ export class HorasExtra {
     @PrimaryGeneratedColumn()
     idHoraExtra :number; 
 
-    @Column({type:'timestamp'})
+    @Column({type:'date'})
     fecha:Date;
     // ✅ Cambio importante: usar type 'time' para almacenar solo HH:MM:SS
     @Column({ type: 'time' })
@@ -79,4 +79,9 @@ cantidadHoras: number | null;
       default: EstadoHoraExtra.PENDIENTE
     })
     estado: EstadoHoraExtra;
+
+    @Column({ type: 'boolean', default: false })
+    esFestivo: boolean;
+    @Column({ type: 'boolean', default: false })
+    esDomingo: boolean;
 }

@@ -23,7 +23,6 @@ export class TurnoController {
 
   @Get()
   findAll(): Promise<Turno[]> {
-    console.log("NUEVOOOO VIEJOOOOOOOOOOOOOOO");
 
     return this.turnoService.findAll();
   }
@@ -46,7 +45,7 @@ export class TurnoController {
 // GET /turnos/nombres → trae solo los nombres
 @Post('codigo')
 findOnlyNames(): Promise<any[]> {
-  console.log("NUEVOOOO METODO");
+
   return this.turnoService.findOnlyNames();
 }
 

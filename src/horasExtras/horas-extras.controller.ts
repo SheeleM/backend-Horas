@@ -25,8 +25,7 @@ export class HorasExtrasController {
 
   @Post()
   create(@Req() req: RequestWithUser, @Body() createHorasExtraDto: CreateHorasExtraDto) {
-    console.log("Usuario autenticado:", req.user);
-    
+
     const userId = req.user.userId;
     if (!userId) {
       throw new Error('No se encontró el ID de usuario en req.user');
@@ -50,82 +49,34 @@ export class HorasExtrasController {
 // ✅ MÉTODO MODIFICADO: Controlador con mejor manejo de filtros
 
 
+
+@Get()
 @Get()
 async findAll(
   @Req() req: RequestWithUser,
-  @Query('fechaDesde') fechaDesde?: string,
-  @Query('fechaHasta') fechaHasta?: string,
-  @Query('estados') estados?: string
+  @Query() query: any
 ) {
-  console.log('Payload completo:', req.user);
-
   const userId = req.user.userId;
-  const userRole = req.user.roles[0]?.toLowerCase(); // Obtener el primer rol del array y convertirlo a minúsculas
-  
-  console.log('>>> [HorasExtrasController.findAll] Usuario:', {
-    userId,
-    roles: req.user.roles,
-    userRole
-  });
+  if (!userId) throw new BadRequestException('Usuario no autenticado');
 
-  if (!userId) {
-    throw new BadRequestException('Usuario no autenticado');
-  }
+  const { fechaDesde, fechaHasta, estados } = query;
 
-  // ✅ CORRECCIÓN: Mejor manejo de estados
-  let estadosProcesados: EstadoHoraExtra[] | undefined;
-  
-  if (estados) {
-    try {
-      const estadosArray = estados.split(',').map(e => e.trim());
-      
-      // Filtrar estados vacíos y validar cada uno
-      estadosProcesados = estadosArray
-        .filter(estado => estado.length > 0)
-        .map(estado => {
-          const estadoUpperCase = estado.toUpperCase() as EstadoHoraExtra;
-          if (!Object.values(EstadoHoraExtra).includes(estadoUpperCase)) {
-            throw new BadRequestException(
-              `Estado inválido: ${estado}. Debe ser uno de: ${Object.values(EstadoHoraExtra).join(', ')}`
-            );
-          }
-          return estadoUpperCase;
-        });
-
-      console.log('Estados procesados:', estadosProcesados);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
-  // ✅ VALIDACIÓN: Fechas son obligatorias
   if (!fechaDesde || !fechaHasta) {
-    throw new BadRequestException(
-      'Los parámetros fechaDesde y fechaHasta son obligatorios. Formato: YYYY-MM-DD'
-    );
+    throw new BadRequestException('fechaDesde y fechaHasta son obligatorios');
   }
 
-  // ✅ VALIDACIÓN: Formato de fechas
-  if (!this.validarFormatoFecha(fechaDesde) || !this.validarFormatoFecha(fechaHasta)) {
-    throw new BadRequestException(
-      'Las fechas deben estar en formato YYYY-MM-DD'
-    );
-  }
-
-  // ✅ VALIDACIÓN: Rango de fechas lógico
-  if (new Date(fechaDesde) > new Date(fechaHasta)) {
-    throw new BadRequestException(
-      'La fecha desde no puede ser mayor que la fecha hasta'
-    );
-  }
+  const estadosProcesados = estados
+    ? estados.split(',').map((e) => e.trim().toUpperCase() as EstadoHoraExtra)
+        .filter((e) => Object.values(EstadoHoraExtra).includes(e))
+    : undefined;
 
   const filtros: FiltrosHorasExtraDto = {
     fechaDesde: new Date(fechaDesde),
     fechaHasta: new Date(fechaHasta),
-    estados: estadosProcesados && estadosProcesados.length > 0 ? estadosProcesados : undefined
+    estados: estadosProcesados,
   };
 
-  return await this.horasExtrasService.findByUserWithFilters(userId, filtros, userRole);
+  return this.horasExtrasService.findByUserWithFilters(userId, filtros);
 }
 
 
@@ -168,12 +119,13 @@ async findAll(
     }
 
     // ✅ Validar que el usuario solo pueda editar sus propias horas extras
-    const horaExtra = await this.horasExtrasService.findOne(id, userId);
+    const horaExtra = await this.horasExtrasService.findOne(id);
     if (horaExtra.usuarioE !== userId) {
       throw new ForbiddenException('No tienes permisos para editar esta hora extra');
     }
+    
 
-    return this.horasExtrasService.updateIndividual(id, updateHorasExtraDto);
+    return this.horasExtrasService.updateIndividual(id, updateHorasExtraDto, userId);
   }
 
   @Delete(':id')
@@ -185,7 +137,7 @@ async findAll(
     }
 
     // ✅ Validar que el usuario solo pueda eliminar sus propias horas extras
-    const horaExtra = await this.horasExtrasService.findOne(id, userId);
+    const horaExtra = await this.horasExtrasService.findOne(id);
     if (horaExtra.usuarioE !== userId) {
       throw new ForbiddenException('No tienes permisos para eliminar esta hora extra');
     }
@@ -199,11 +151,7 @@ async findAll(
     @Body() updateEstadoDto: UpdateEstadoDto,
     @Req() req: RequestWithUser
   ) {
-    console.log('>>> [updateEstado] Datos recibidos:', {
-      id,
-      estado: updateEstadoDto.estado,
-      userId: req.user.userId
-    });
+    
     
     const userId = req.user.userId;
     if (!userId) {
@@ -219,7 +167,6 @@ async findAll(
 
       return resultado;
     } catch (error) {
-      console.error('>>> [updateEstado] Error:', error);
       throw error;
     }
   }

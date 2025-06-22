@@ -3,7 +3,7 @@ import { CreateTipoHorasExtraDto } from './dto/create-tipo-horas-extra.dto';
 import { UpdateTipoHorasExtraDto } from './dto/update-tipo-horas-extra.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TipoHorasExtra } from './entities/tipo-horas-extra.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 
 @Injectable()
 export class TipoHorasExtrasService {
@@ -12,7 +12,7 @@ export class TipoHorasExtrasService {
       @InjectRepository(TipoHorasExtra)
       private tipodeHoraRepository: Repository<TipoHorasExtra>,
     ) {
-      console.log('>>> Repositorio inyectado correctamente');
+
     }
   
   async create(createTipoHorasExtraDto: CreateTipoHorasExtraDto) {
@@ -82,4 +82,65 @@ export class TipoHorasExtrasService {
       message: `Tipo de hora extra con id ${id} eliminado exitosamente`,
     };
   }
+
+async buscarTiposPorRangoYCondiciones(
+  horaInicio: Date,
+  horaFin: Date,
+  esDomingo: boolean,
+  esFestivo: boolean
+): Promise<TipoHorasExtra[]> {
+  const tipos = await this.tipodeHoraRepository.find({
+    where: [
+      {
+        esDomingo: true,
+      },
+      {
+        esFestivo: true,
+      }
+    ]
+  });
+
+return tipos.filter(tipo => {
+  const rangos: [string, string][] = [];
+
+  if (tipo.horaInicio && tipo.horaFin) {
+    rangos.push([tipo.horaInicio, tipo.horaFin]);
+  }
+  if (tipo.horaInicio2 && tipo.horaFin2) {
+    rangos.push([tipo.horaInicio2, tipo.horaFin2]);
+  }
+
+  return rangos.some(([inicio, fin]) => {
+    const fechaBase = new Date(horaInicio);
+    fechaBase.setHours(0, 0, 0, 0);
+
+    const fechaAnterior = new Date(fechaBase);
+    fechaAnterior.setDate(fechaAnterior.getDate() - 1);
+
+    // Generar dos versiones del rango: con fecha base actual y anterior
+    const variantes = [fechaBase, fechaAnterior];
+
+    return variantes.some(base => {
+      const rangoInicio = this.crearFechaConHora(base, inicio);
+      let rangoFin = this.crearFechaConHora(base, fin);
+      if (rangoFin <= rangoInicio) {
+        rangoFin.setDate(rangoFin.getDate() + 1); // cruza medianoche
+      }
+
+      return horaInicio < rangoFin && horaFin > rangoInicio;
+    });
+  });
+});
+
 }
+
+private crearFechaConHora(base: Date, hora: string): Date {
+  const [h, m] = hora.split(':').map(Number);
+  const fecha = new Date(base);
+  fecha.setHours(h, m, 0, 0);
+  return fecha;
+}
+
+
+}
+

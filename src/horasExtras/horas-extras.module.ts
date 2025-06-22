@@ -8,6 +8,8 @@ import { Turno } from '../turno/entities/turno.entity';
 import { HorasExtraService } from './horas-extras.service';
 import { HorasExtrasController } from './horas-extras.controller';
 import { AuthModuleOptions } from '@nestjs/passport';
+import { TipoHorasExtrasModule } from 'src/tipo-horas-extras/tipo-horas-extras.module';
+import { TipoHorasExtrasService } from 'src/tipo-horas-extras/tipo-horas-extras.service';
 
 @Module({
   imports: [
@@ -18,10 +20,11 @@ import { AuthModuleOptions } from '@nestjs/passport';
       TipoHorasExtra,
       Turno,
       AuthModuleOptions,
+      TipoHorasExtrasModule
     ]),
   ],
   controllers: [HorasExtrasController],
-  providers: [HorasExtraService],
+  providers: [HorasExtraService,TipoHorasExtrasService],
   exports: [HorasExtraService],
 })
 export class HorasExtrasModule {}

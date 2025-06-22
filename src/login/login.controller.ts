@@ -17,7 +17,6 @@ export class LoginController {
   @Public()
   @Post('login')
   async login(@Body() createLoginDto: CreateLoginDto, @Session() session: Record<string, any>) {
-    console.log("entro al login");
     session.userId = "idSession1";
     return this.loginService.login(createLoginDto,session);
   }
