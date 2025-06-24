@@ -38,7 +38,7 @@ async function bootstrap() {
  
  //   'https://vrbstm5m-4200.use2.devtunnels.ms', // HTTPS
   //  'http://vrbstm5m-4200.use2.devtunnels.ms',  // HTTP por si acaso
-    //'http://localhost:4200',
+     //'http://localhost:4200',
      'http://20.57.139.111' // Para desarrollo local
   ],
 

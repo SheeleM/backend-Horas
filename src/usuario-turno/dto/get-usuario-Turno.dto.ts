@@ -21,6 +21,8 @@ export class GetUsuarioTurnoDto {
   @IsString()
   codigo: string;
 
+ 
+
 
   turno: Turno;
   

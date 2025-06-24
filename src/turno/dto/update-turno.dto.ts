@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTurnoDto {
   @IsString()
@@ -22,4 +22,12 @@ export class UpdateTurnoDto {
   @IsString()
   @IsNotEmpty()
   diaFin: string;
+
+    @IsOptional()
+    @IsBoolean()
+    guardia?:boolean;
+
+      @IsOptional()
+  @IsBoolean()
+  activo?:boolean;
 }

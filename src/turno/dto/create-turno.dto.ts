@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Column } from 'typeorm';
 
 export class CreateTurnoDto {
@@ -25,4 +25,14 @@ export class CreateTurnoDto {
   @IsString()
   @IsNotEmpty()
   diaFin: string;
+
+  @IsOptional()
+  @IsBoolean()
+  guardia?:boolean;
+
+    @IsOptional()
+  @IsBoolean()
+  activo?:boolean;
+
+
 }

@@ -33,6 +33,12 @@ export class Turno {
   @Column()
   diaFin: string;
 
+  @Column({ default: false })
+  guardia: boolean;
+  
+    @Column({ default: true })
+  activo: boolean;
+
   @Column({ type: 'timestamp' })
   cread: Date;
 

@@ -1,4 +1,4 @@
-import {  IsInt, IsString } from "class-validator";
+import {  IsBoolean, IsInt, IsOptional, IsString } from "class-validator";
 
 
 export class GetAsignacionTurnoDto {
@@ -9,4 +9,9 @@ export class GetAsignacionTurnoDto {
 
     @IsInt()
     IdTurno:number;
+
+    
+        @IsOptional()
+      @IsBoolean()
+      activo?:boolean;
 }
