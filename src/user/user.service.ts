@@ -30,7 +30,7 @@ export class UserService {
     const user = this.userRepository.create({
       ...createUserDto,
       preguntas: { id: createUserDto.preguntas } as Pregunta,
-      rol: { idRol: 1 } as Rol,
+      rol: { idRol: 2 } as Rol,
     });
 
     return await this.userRepository.save(user);

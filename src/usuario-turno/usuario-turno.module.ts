@@ -7,10 +7,11 @@ import { Turno } from '../turno/entities/turno.entity';
 import { User } from '../user/entities/user.entity';
 import { TurnoModule } from '../turno/turno.module';
 import { UserModule } from '../user/user.module';
+import { HorasExtra } from 'src/horasExtras/entities/horas-extra.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UsuarioTurno, Turno, User]),
+    TypeOrmModule.forFeature([UsuarioTurno, Turno, User, HorasExtra]),
     TurnoModule,
     UserModule
   ],

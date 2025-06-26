@@ -33,7 +33,7 @@ async function bootstrap() {
 
   origin: [
  
-    // 'http://localhost:4200',
+    //'http://localhost:4200',
      'http://20.57.139.111', // Para desarrollo local
   ],
 

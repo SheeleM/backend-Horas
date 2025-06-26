@@ -337,6 +337,7 @@ async verificarSuperposicion(usuarioFK: number, fechaInicio: Date, fechaFin: Dat
     return diasTurno;
   }
 
+
   async remove(id: number): Promise<void> {
     const result = await this.usuarioTurnoRepository.delete(id);
 
@@ -344,6 +345,7 @@ async verificarSuperposicion(usuarioFK: number, fechaInicio: Date, fechaFin: Dat
       throw new NotFoundException(`Turno with ID ${id} not found`);
     }
   }
+
 
    async removeMultiple(ids: number[]): Promise<void> {
     if (!ids || ids.length === 0) {

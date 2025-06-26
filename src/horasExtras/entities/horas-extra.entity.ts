@@ -69,7 +69,9 @@ cantidadHoras: number | null;
     tipoHoraExtra: TipoHorasExtra | null;;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
-    @ManyToOne(() => UsuarioTurno, { nullable: true })
+    @ManyToOne(() => UsuarioTurno, {
+       nullable: true ,  onDelete: 'CASCADE',
+})
     @JoinColumn({ name: 'turno' })
     usuarioTurno: UsuarioTurno | null;
 
