@@ -653,13 +653,19 @@ async findAll(userId?: number): Promise<HorasExtra[]> {
  * ✅ NUEVO MÉTODO: Actualización individual de hora extra
  * Actualiza solo el registro especificado sin afectar otros registros
  */
-async updateIndividual(id: number, updateHorasExtraDto: UpdateHorasExtraDto, userId: number): Promise<HorasExtra> {
+async updateIndividual(id: number, updateHorasExtraDto: UpdateHorasExtraDto, userId: number, userRole: string): Promise<HorasExtra> {
 
 // 1. Obtener registro existente
 const horaExtraExistente = await this.findOne(id);
 if (!horaExtraExistente) {
   throw new NotFoundException(`Hora extra con ID ${id} no encontrada`);
 }
+
+// ✅ Aquí validas que solo ADMIN pueda modificar si ya está aprobada
+if (horaExtraExistente.estado === 'APROBADA' && userRole !== 'ADMIN') {
+  throw new ForbiddenException('No puedes modificar una hora extra aprobada');
+}
+
 
 // Obtener la fecha final para la búsqueda
 const fechaFinal = updateHorasExtraDto.fecha || horaExtraExistente.fecha;
@@ -1001,17 +1007,30 @@ async remove(id: number, userId?: number): Promise<void> {
 }
 
 // ✅ NUEVO MÉTODO: Buscar horas extras con filtros obligatorios
-async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto): Promise<HorasExtra[]> {
+async findByUserWithFilters(userId: number, filtros: FiltrosHorasExtraDto, rolUsuario: string[]): Promise<HorasExtra[]> {
   const fechaDesde = new Date(filtros.fechaDesde);
   const fechaHasta = new Date(filtros.fechaHasta);
-  fechaHasta.setHours(23, 59, 59, 999); // Asegurarse de incluir todo el último día
+ // fechaHasta.setHours(23, 59, 59, 999); // Asegurarse de incluir todo el último día
 
+  // Ajustar fechaHasta sumándole un día menos un milisegundo
+fechaHasta.setDate(fechaHasta.getDate() + 1);
+fechaHasta.setMilliseconds(-1);
+
+/*
   // Construir las condiciones WHERE
   const whereConditions: any = {
     usuarioE: userId,
     fecha: Between(fechaDesde,fechaHasta)
   };
+*/
+  // Declarar e inicializar whereConditions
+  const whereConditions: any = {
+    fecha: Between(fechaDesde, fechaHasta)
+  };
 
+  if (!rolUsuario.includes('admin')) {
+    whereConditions.usuarioE = userId;
+  }
   // Agregar filtro de estados si se proporciona
   if (filtros.estados && filtros.estados.length > 0) {
     whereConditions.estado = filtros.estados.length === 1 ? filtros.estados[0]  : In(filtros.estados);

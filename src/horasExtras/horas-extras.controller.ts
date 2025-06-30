@@ -45,9 +45,6 @@ export class HorasExtrasController {
     // ✅ Solo retornar las horas extras del usuario autenticado
     return await this.horasExtrasService.findByUser(userId);
   }*/
-// ✅ MÉTODO MODIFICADO: Ahora requiere filtros obligatorios
-// ✅ MÉTODO MODIFICADO: Controlador con mejor manejo de filtros
-
 
 
 @Get()
@@ -59,6 +56,7 @@ async findAll(
   const userId = req.user.userId;
   if (!userId) throw new BadRequestException('Usuario no autenticado');
 
+const rolesUsuario = Array.isArray(req.user.roles) ? req.user.roles : [req.user.roles];
   const { fechaDesde, fechaHasta, estados } = query;
 
   if (!fechaDesde || !fechaHasta) {
@@ -76,7 +74,7 @@ async findAll(
     estados: estadosProcesados,
   };
 
-  return this.horasExtrasService.findByUserWithFilters(userId, filtros);
+  return this.horasExtrasService.findByUserWithFilters(userId, filtros, rolesUsuario);
 }
 
 
@@ -113,11 +111,12 @@ async findAll(
     @Req() req: RequestWithUser
   ): Promise<HorasExtra> {
     const userId = req.user.userId;
+    const userRole = req.user.roles[0]?.toLowerCase();
     
     if (!userId) {
       throw new Error('No se encontró el ID de usuario en req.user');
     }
-
+ console.log("usuario rol problem",userRole)
     // ✅ Validar que el usuario solo pueda editar sus propias horas extras
     const horaExtra = await this.horasExtrasService.findOne(id);
     if (horaExtra.usuarioE !== userId) {
@@ -125,7 +124,7 @@ async findAll(
     }
     
 
-    return this.horasExtrasService.updateIndividual(id, updateHorasExtraDto, userId);
+    return this.horasExtrasService.updateIndividual(id, updateHorasExtraDto, userId, userRole);
   }
 
   @Delete(':id')

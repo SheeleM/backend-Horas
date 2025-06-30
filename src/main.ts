@@ -34,7 +34,7 @@ async function bootstrap() {
   origin: [
  
     //'http://localhost:4200',
-     'http://20.57.139.111', // Para desarrollo local
+    'http://20.57.139.111', // Para desarrollo local
   ],
 
  // origin: 'https://front-horas-two.vercel.app', // Permitir solicitudes solo desde Angular
