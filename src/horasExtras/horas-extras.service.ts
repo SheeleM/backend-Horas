@@ -924,11 +924,16 @@ async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Pr
   );
 
   if (haySolapamiento && turno.guardia==false) {
+      console.log(`[DEBUG] Se detectó solapamiento y turno.guardia es false`);
+
     const mensajeError = `No puedes registrar una hora extra en tu horario laboral. `;// +
      // `Tu turno es de ${turno.horaInicio} a ${turno.horaFin}`;
 
 
     throw new BadRequestException(mensajeError);
+  }else{
+      console.log(`[DEBUG] No entra al if. Guardia: ${turno.guardia}, Solapamiento: ${haySolapamiento}`);
+
   }
 
 
