@@ -45,7 +45,7 @@ export class TurnoService {
     turno.horaFin = new Date(createTurnoDto.horaFin);
     turno.diaInicio = createTurnoDto.diaInicio;
     turno.diaFin = createTurnoDto.diaFin;
-    turno.guardia = typeof createTurnoDto.guardia === 'number' ? createTurnoDto.guardia : 0; // Default to 0 if not provided
+    turno.guardia = createTurnoDto.guardia || false; // Default to false if not provided
     turno.activo = createTurnoDto.activo || false; // Default to false if not provided
 
     turno.cread = new Date();
@@ -96,7 +96,7 @@ export class TurnoService {
     }
 
     if (updateTurnoDto.guardia !== undefined) {
-      turno.guardia = typeof updateTurnoDto.guardia === 'number' ? updateTurnoDto.guardia : 0;
+      turno.guardia = updateTurnoDto.guardia || false;
     }
     if (updateTurnoDto.activo !== undefined) {
       turno.activo = updateTurnoDto.activo || false;

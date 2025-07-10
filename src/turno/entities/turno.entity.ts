@@ -35,7 +35,7 @@ export class Turno {
 
   //@Column({ default: false })
   @Column({ type: 'tinyint', width: 1 })
-  guardia: number;
+  guardia: boolean;
   
     @Column({ default: true })
   activo: boolean;

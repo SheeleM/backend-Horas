@@ -924,7 +924,7 @@ async updateEstado(id: number, nuevoEstado: EstadoHoraExtra, userId: number): Pr
   );
 
 
-  if (haySolapamiento &&  turno.guardia==0 ) {
+  if (haySolapamiento && !turno.guardia ) {
       console.log(`[DEBUG] Se detectó solapamiento y turno.guardia es false`);
   console.log('[DEBUG] Tipo y valor de turno.guardia:', turno.guardia, typeof turno.guardia);
 
