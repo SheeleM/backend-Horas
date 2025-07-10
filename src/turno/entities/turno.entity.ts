@@ -33,8 +33,9 @@ export class Turno {
   @Column()
   diaFin: string;
 
-  @Column({ default: false })
-  guardia: boolean;
+  //@Column({ default: false })
+  @Column({ type: 'tinyint', width: 1 })
+  guardia: number;
   
     @Column({ default: true })
   activo: boolean;
