@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { Usuario } from './entities/usuario.entity';
+import { Public } from 'src/login/login.controller';
 
 @Controller('usuarios')
 export class UsuariosController {
@@ -12,6 +13,7 @@ export class UsuariosController {
     return this.usuariosService.create(createUsuarioDto);
   }
 
+  @Public()
   @Get()
   findAll(): Usuario[] {
     return this.usuariosService.findAll();

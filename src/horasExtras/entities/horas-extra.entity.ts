@@ -18,7 +18,7 @@ export class HorasExtra {
     @PrimaryGeneratedColumn()
     idHoraExtra :number; 
 
-    @Column({type:'timestamp'})
+    @Column({type:'date'})
     fecha:Date;
     // ✅ Cambio importante: usar type 'time' para almacenar solo HH:MM:SS
     @Column({ type: 'time' })
@@ -35,8 +35,8 @@ export class HorasExtra {
     @Column()
     usuarioE: number;
 
-    @Column()
-    turno: number;
+    @Column({ nullable: true })
+    turno: number | null;
 
     @Column({type:'timestamp'})
     fechaCreacion: Date;
@@ -69,10 +69,11 @@ cantidadHoras: number | null;
     tipoHoraExtra: TipoHorasExtra | null;;
 
     // Relación: Muchas horas extra pueden pertenecer a un solo usuario-turno
-    @ManyToOne(() => UsuarioTurno, usuarioTurno => usuarioTurno.horasExtras, {
-        onDelete: 'CASCADE' // Agregar esta línea
-    })
-    usuarioTurno: UsuarioTurno;
+    @ManyToOne(() => UsuarioTurno, {
+       nullable: true ,  onDelete: 'CASCADE',
+})
+    @JoinColumn({ name: 'turno' })
+    usuarioTurno: UsuarioTurno | null;
 
     @Column({
       type: 'enum',
@@ -80,4 +81,9 @@ cantidadHoras: number | null;
       default: EstadoHoraExtra.PENDIENTE
     })
     estado: EstadoHoraExtra;
+
+    @Column({ type: 'boolean', default: false })
+    esFestivo: boolean;
+    @Column({ type: 'boolean', default: false })
+    esDomingo: boolean;
 }

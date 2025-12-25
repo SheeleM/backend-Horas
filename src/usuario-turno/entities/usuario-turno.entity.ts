@@ -47,9 +47,10 @@ export class UsuarioTurno {
       @ManyToOne(() => Turno, (turno) => turno.usuarioTurno, { onDelete: 'CASCADE' })
       turno: Turno;
 */
-@ManyToOne(() => Turno, (turno) => turno.usuarioTurno, { 
+@ManyToOne(() => Turno, { 
       onDelete: 'CASCADE',
-      eager: true // si lo quieres traer siempre, opcional
+            eager: true // This will always load the relation
+
     })
     @JoinColumn({ name: 'turnoFK' }) // <- Esto también puedes incluirlo
     turno: Turno;

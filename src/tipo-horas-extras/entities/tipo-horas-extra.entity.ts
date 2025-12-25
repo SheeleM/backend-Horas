@@ -26,9 +26,13 @@ export class TipoHorasExtra {
     @Column({ type: 'time',nullable: true })
     horaFin2?: string;
 
+      @Column({ type: 'boolean',nullable: true })
+    esFestivo?: boolean;
+
+    @Column({ type: 'boolean',nullable: true })
+    esDomingo?: boolean;
 
     @Column({type:'timestamp'})
-
     creado: Date;
 
     @Column({type:'timestamp'})

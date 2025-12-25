@@ -1,3 +1,4 @@
+import { IsBoolean } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateHorasExtraDto } from './create-horas-extra.dto';
 import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
@@ -25,5 +26,13 @@ export class UpdateHorasExtraDto  {
   horaFin?: string;
 
     estado?: EstadoHoraExtra;
+
+            @IsOptional()
+    @IsBoolean()
+  esDomingo?:boolean;
+  
+          @IsOptional()
+    @IsBoolean()
+  esFestivo?: boolean;
 
 }

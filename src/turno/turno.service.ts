@@ -28,6 +28,16 @@ export class TurnoService {
   ) {}
 
   async create(createTurnoDto: CreateTurnoDto): Promise<Turno> {
+
+     // ✨ Normalizar código (quitar espacios, poner mayúsculas)
+  const codigo = createTurnoDto.codigo.trim().toUpperCase();
+
+  // 🔍 Verificar si ya existe un turno con ese código
+  const existe = await this.turnoRepository.findOne({ where: { codigo } });
+
+  if (existe) {
+    throw new Error(`El código de turno "${codigo}" ya está en uso`);
+  }
     const turno = new Turno();
     turno.codigo = createTurnoDto.codigo;
     turno.nombre = createTurnoDto.nombre;
@@ -35,6 +45,9 @@ export class TurnoService {
     turno.horaFin = new Date(createTurnoDto.horaFin);
     turno.diaInicio = createTurnoDto.diaInicio;
     turno.diaFin = createTurnoDto.diaFin;
+    turno.guardia = createTurnoDto.guardia || false; // Default to false if not provided
+    turno.activo = createTurnoDto.activo || false; // Default to false if not provided
+
     turno.cread = new Date();
     turno.actualizado = new Date();
 
@@ -82,6 +95,13 @@ export class TurnoService {
       turno.diaFin = updateTurnoDto.diaFin;
     }
 
+    if (updateTurnoDto.guardia !== undefined) {
+      turno.guardia = updateTurnoDto.guardia || false;
+    }
+    if (updateTurnoDto.activo !== undefined) {
+      turno.activo = updateTurnoDto.activo || false;
+    }
+ 
     turno.actualizado = new Date();
     turno.horaFin = new Date(updateTurnoDto.horaFin);
     turno.horaInicio = new Date(updateTurnoDto.horaInicio);
@@ -107,7 +127,7 @@ export class TurnoService {
 // turno.service.ts
 async findOnlyNames(): Promise<any[]> {
   const turnos = await this.turnoRepository.find({
-    select: ['codigo','idTurno'] // solo selecciona la columna 'nombre'
+    select: ['codigo','idTurno', 'activo'] // solo selecciona la columna 'nombre'
 
   });
 
